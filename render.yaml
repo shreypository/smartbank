@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: smartbank
+    runtime: java
+    buildCommand: "./mvnw clean install"
+    startCommand: "java -jar target/*.jar"
