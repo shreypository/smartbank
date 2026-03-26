@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Admin Dashboard</h2>
+
+    <div style="text-align:right; margin:10px;">
+        <button onclick="logout()">Logout</button>
+    </div>
+    <button onclick="loadUsers()">View Users</button>
+    <button onclick="loadAllAccountsAdmin()">View Accounts</button>
+
+    <hr>
+
+    <h3>Update Balance</h3>
+    <input type="number" id="adminAccountId" placeholder="Account ID">
+    <input type="number" id="adminAmount" placeholder="Amount (+/-)">
+    <button onclick="updateBalance()">Update</button>
+
+    <pre id="adminResult"></pre>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

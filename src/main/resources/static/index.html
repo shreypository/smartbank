@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MPHT BANK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="landing-container">
+    <h1 class="title">Welcome to MPHT BANK</h1>
+
+    <div class="buttons">
+        <button onclick="openModal('login')">Login</button>
+        <button onclick="openModal('register')">Register</button>
+        <button onclick="openModal('admin')">Admin Login</button>
+    </div>
+</div>
+
+<!-- 🔥 MODAL -->
+<div id="modal" class="modal hidden">
+    <div class="modal-card">
+
+        <span class="close" onclick="closeModal()">✖</span>
+
+        <!-- LOGIN -->
+        <div id="loginForm" class="form hidden">
+            <h2>Login</h2>
+            <input type="text" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <!-- REGISTER -->
+        <div id="registerForm" class="form hidden">
+            <h2>Register</h2>
+            <input type="text" id="name" placeholder="Name">
+            <input type="text" id="regEmail" placeholder="Email">
+            <input type="password" id="regPassword" placeholder="Password">
+            <button onclick="register()">Register</button>
+        </div>
+
+        <!-- ADMIN -->
+        <div id="adminForm" class="form hidden">
+            <h2>Admin Login</h2>
+            <input type="text" id="adminUser" placeholder="Username">
+            <input type="password" id="adminPass" placeholder="Password">
+            <button onclick="adminLogin()">Login</button>
+        </div>
+
+        <p id="message"></p>
+
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
