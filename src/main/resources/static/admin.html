@@ -1,30 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank Admin Console</title>
+    <meta name="description" content="BugBank Admin Console — manage users, accounts, and perform balance adjustments.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>Admin Dashboard</h2>
+<div class="admin-wrap">
 
-    <div style="text-align:right; margin:10px;">
-        <button onclick="logout()">Logout</button>
+    <!-- ══════════════ ADMIN HEADER ══════════════ -->
+    <header class="admin-header">
+        <div class="admin-brand">
+            <div class="logo-box">🏦</div>
+            <div>
+                <div style="font-size:1.1rem;font-weight:800;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">BugBank</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);">Admin Console</div>
+            </div>
+            <span class="admin-badge">ADMIN</span>
+        </div>
+        <button id="btn-admin-logout" class="btn-logout" onclick="logout()">⏻ Logout</button>
+    </header>
+
+    <!-- ══════════════ CONTENT ══════════════ -->
+    <div class="admin-content">
+
+        <div class="section-header" style="margin-top:1rem;">
+            <h2>🛡️ Admin Dashboard</h2>
+            <p>Manage users, accounts and perform balance adjustments</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="admin-actions">
+            <button id="btn-view-users"    class="btn btn-primary" onclick="loadUsers()">👥 View All Users</button>
+            <button id="btn-view-accounts" class="btn btn-ghost"   onclick="loadAllAccountsAdmin()">🏛️ View All Accounts</button>
+        </div>
+
+        <!-- Update Balance Panel -->
+        <div class="admin-panel">
+            <div class="sub-h3" style="margin-bottom:1rem;">💰 Update Account Balance</div>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Account ID</label>
+                    <input type="number" id="adminAccountId" placeholder="e.g. 1001">
+                </div>
+                <div class="form-field">
+                    <label>Amount (+/-)</label>
+                    <input type="number" id="adminAmount" placeholder="e.g. +5000 or -3000">
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <button id="btn-update-balance" class="btn btn-primary" onclick="updateBalance()">Update Balance</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="adminResult"></div>
+
     </div>
-    <button onclick="loadUsers()">View Users</button>
-    <button onclick="loadAllAccountsAdmin()">View Accounts</button>
-
-    <hr>
-
-    <h3>Update Balance</h3>
-    <input type="number" id="adminAccountId" placeholder="Account ID">
-    <input type="number" id="adminAmount" placeholder="Amount (+/-)">
-    <button onclick="updateBalance()">Update</button>
-
-    <pre id="adminResult"></pre>
 </div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
 
 <script src="script.js"></script>
 </body>

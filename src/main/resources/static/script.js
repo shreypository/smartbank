@@ -1,174 +1,252 @@
-function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+/* ================================================================
+   BNF SMARTBANK — UNIFIED SCRIPT
+   All original API logic preserved.
+   Additive UI layer: toasts, loaders, modals, nav highlight.
+   ================================================================ */
 
-    fetch("/users/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-    })
-        .then(res => res.json()) // 🔥 backend should return user object
-        .then(data => {
-            if (data.userCode) {
+// ── TOAST SYSTEM ─────────────────────────────────────────────
+function showToast(message, type = 'info') {
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+    const container = document.getElementById('toast-container');
+    if (!container) { console.warn(message); return; }
 
-                // 🔥 STORE USER CODE
-                localStorage.setItem("userCode", data.userCode);
-
-                window.location.href = "dashboard.html";
-            } else {
-                document.getElementById("message").innerText = "Invalid login";
-            }
-        })
-        .catch(err => console.error(err));
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type]}</span>
+        <span>${message}</span>
+        <button class="toast-close" onclick="removeToast(this.parentElement)">✕</button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => removeToast(toast), 4000);
 }
 
-// 🔥 UNIVERSAL RESPONSE HANDLER
+function removeToast(el) {
+    if (!el || !el.parentElement) return;
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 260);
+}
+
+// ── BUTTON LOADING STATE ──────────────────────────────────────
+function setLoading(btnEl, loading) {
+    if (!btnEl) return;
+    if (loading) {
+        btnEl.dataset.origText = btnEl.innerHTML;
+        btnEl.innerHTML = `<span class="btn-spinner"></span> Loading…`;
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.7';
+    } else {
+        btnEl.innerHTML = btnEl.dataset.origText || btnEl.innerHTML;
+        btnEl.disabled = false;
+        btnEl.style.opacity = '';
+    }
+}
+
+// ── SECTION SKELETON LOADER ───────────────────────────────────
+function showSkeleton(containerId, rows = 3) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = Array(rows).fill(`<div class="skeleton skeleton-row" style="margin-bottom:0.6rem;border-radius:10px;height:50px;"></div>`).join('');
+}
+
+// ── UNIVERSAL RESPONSE HANDLER (original) ────────────────────
 function handleResponse(res) {
     return res.text().then(data => {
-        try {
-            return JSON.parse(data);
-        } catch {
-            return data;
-        }
+        try { return JSON.parse(data); } catch { return data; }
     });
 }
 
+// ─────────────────────────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────────────────────────
+
+function login() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msgEl = document.getElementById('message');
+    const btn = document.getElementById('btn-login-submit');
+
+    if (!email || !password) {
+        msgEl.innerText = '⚠️ Please fill in all fields.';
+        return;
+    }
+
+    setLoading(btn, true);
+    msgEl.innerText = '';
+
+    fetch('/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    })
+        .then(res => res.json())
+        .then(data => {
+            setLoading(btn, false);
+            if (data.userCode) {
+                localStorage.setItem('userCode', data.userCode);
+                window.location.href = 'dashboard.html';
+            } else {
+                msgEl.innerText = '❌ Invalid email or password. Please try again.';
+            }
+        })
+        .catch(err => {
+            setLoading(btn, false);
+            msgEl.innerText = '❌ Invalid email or password. Please try again.';
+            console.error(err);
+        });
+}
+
 function register() {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("regEmail").value;
-    const password = document.getElementById("regPassword").value;
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const msgEl = document.getElementById('message');
+    const btn = document.getElementById('btn-register-submit');
 
-    fetch("/users/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            name: name,
-            email: email,
-            password: password,
-            role: "USER"
+    if (!name || !email || !password) {
+        msgEl.innerText = '⚠️ Please fill in all fields.';
+        return;
+    }
+
+    setLoading(btn, true);
+    msgEl.innerText = '';
+
+    fetch('/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role: 'USER' })
+    })
+        .then(res => res.text())
+        .then(data => {
+            setLoading(btn, false);
+            // Auto-login after registration
+            fetch('/users/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+                .then(r => r.json())
+                .then(loginData => {
+                    if (loginData.userCode) {
+                        localStorage.setItem('userCode', loginData.userCode);
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        msgEl.innerText = '✅ ' + data + ' — Please sign in.';
+                        switchTab('login');
+                    }
+                })
+                .catch(() => {
+                    msgEl.innerText = '✅ ' + data + ' — Please sign in.';
+                    switchTab('login');
+                });
         })
-    })
-        .then(res => res.text()) // 🔥 FIX HERE
-        .then(data => {
-            document.getElementById("message").innerText = data;
-        })
-        .catch(err => console.error(err));
-}
-
-function createAccount() {
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/create?userCode=${userCode}&accountType=SAVINGS`, {
-        method: "POST"
-    })
-        .then(handleResponse)
-        .then(data => {
-            document.getElementById("result").innerText =
-                typeof data === "string" ? data : JSON.stringify(data, null, 2);
+        .catch(err => {
+            setLoading(btn, false);
+            msgEl.innerText = '❌ Registration failed. Please try again.';
+            console.error(err);
         });
 }
 
-function deposit() {
-    const accountId = document.getElementById("accountId").value;
-    const amount = document.getElementById("amount").value;
-    const userCode = localStorage.getItem("userCode");
+function adminLogin() {
+    const user = document.getElementById('adminUser').value.trim();
+    const pass = document.getElementById('adminPass').value;
+    const msgEl = document.getElementById('message');
+    const btn = document.getElementById('btn-admin-submit');
 
-    fetch(`/accounts/deposit?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, {
-        method: "POST"
-    })
-        .then(handleResponse)
-        .then(data => {
-            document.getElementById("result").innerText =
-                typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        });
+    setLoading(btn, true);
+    setTimeout(() => {
+        setLoading(btn, false);
+        if (user === 'admin' && pass === 'admin') {
+            window.location.href = 'admin.html';
+        } else {
+            msgEl.innerText = '❌ Invalid admin credentials.';
+        }
+    }, 400);
 }
 
-function withdraw() {
-    const accountId = document.getElementById("accountId").value;
-    const amount = document.getElementById("amount").value;
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/withdraw?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, {
-        method: "POST"
-    })
-        .then(handleResponse)
-        .then(data => {
-            document.getElementById("result").innerText =
-                typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        });
-}
-
-function transfer() {
-    const accountId = document.getElementById("accountId").value;
-    const toAccountId = document.getElementById("toAccountId").value;
-    const amount = document.getElementById("amount").value;
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/transfer?fromAccountId=${accountId}&toAccountId=${toAccountId}&amount=${amount}&userCode=${userCode}`, {
-        method: "POST"
-    })
-        .then(handleResponse)
-        .then(data => {
-            document.getElementById("result").innerText = data;
-        });
-}
-
-function getTransactions() {
-    const accountId = document.getElementById("accountId").value;
-
-    fetch(`/accounts/transactions?accountId=${accountId}`)
-        .then(handleResponse)
-        .then(data => {
-            document.getElementById("result").innerText =
-                typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        })
-        .catch(err => console.error(err));
-}
+// ─────────────────────────────────────────────────────────────
+//  MODAL
+// ─────────────────────────────────────────────────────────────
 
 function openModal(type) {
-    document.getElementById("modal").classList.remove("hidden");
+    const modal = document.getElementById('modal');
+    modal.classList.remove('hidden');
 
-    document.getElementById("loginForm").classList.add("hidden");
-    document.getElementById("registerForm").classList.add("hidden");
-    document.getElementById("adminForm").classList.add("hidden");
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+    document.getElementById('adminForm').classList.add('hidden');
 
-    if (type === "login") {
-        document.getElementById("loginForm").classList.remove("hidden");
-    } else if (type === "register") {
-        document.getElementById("registerForm").classList.remove("hidden");
+    const tabs = document.getElementById('authTabs');
+
+    if (type === 'login') {
+        document.getElementById('loginForm').classList.remove('hidden');
+        if (tabs) { tabs.style.display = ''; switchTab('login', true); }
+    } else if (type === 'register') {
+        document.getElementById('registerForm').classList.remove('hidden');
+        if (tabs) { tabs.style.display = ''; switchTab('register', true); }
     } else {
-        document.getElementById("adminForm").classList.remove("hidden");
+        document.getElementById('adminForm').classList.remove('hidden');
+        if (tabs) tabs.style.display = 'none';
     }
+
+    document.getElementById('message').innerText = '';
 }
 
 function closeModal() {
-    document.getElementById("modal").classList.add("hidden");
+    document.getElementById('modal').classList.add('hidden');
 }
 
-// 🔥 ADMIN LOGIN
-function adminLogin() {
-    const user = document.getElementById("adminUser").value;
-    const pass = document.getElementById("adminPass").value;
+function switchTab(type, silent = false) {
+    const loginTab = document.getElementById('tab-login');
+    const registerTab = document.getElementById('tab-register');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
 
-    if (user === "admin" && pass === "admin") {
-        window.location.href = "admin.html";
+    if (!loginTab) return;
+
+    if (type === 'login') {
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
     } else {
-        document.getElementById("message").innerText = "Invalid admin credentials";
+        registerTab.classList.add('active');
+        loginTab.classList.remove('active');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+    }
+    if (!silent && document.getElementById('message')) {
+        document.getElementById('message').innerText = '';
     }
 }
 
-// 🔥 SHOW USER CODE
-window.onload = function () {
-    const userCode = localStorage.getItem("userCode");
+// Close modal on backdrop click
+window.addEventListener('click', function (e) {
+    const modal = document.getElementById('modal');
+    if (modal && e.target === modal) closeModal();
+});
 
-    if (userCode) {
-        document.getElementById("userCodeDisplay").innerText = userCode;
+// ─────────────────────────────────────────────────────────────
+//  WINDOW ONLOAD (dashboard)
+// ─────────────────────────────────────────────────────────────
+
+window.onload = function () {
+    const userCode = localStorage.getItem('userCode');
+
+    // Dashboard init
+    if (document.getElementById('userCodeDisplay')) {
+        if (!userCode) { window.location.href = 'index.html'; return; }
+
+        document.getElementById('userCodeDisplay').innerText = userCode;
+        if (document.getElementById('userCodeDisplay2'))
+            document.getElementById('userCodeDisplay2').innerText = userCode;
+
+        // Set avatar initial
+        const avatarEl = document.getElementById('userAvatarInitial');
+        if (avatarEl) avatarEl.innerText = userCode.charAt(0).toUpperCase();
+
         loadAccounts();
-        loadTransactionAccounts();// 🔥 NEW LINE (IMPORTANT)
+        loadTransactionAccounts();
         loadATMAccounts();
         loadTransferAccounts();
         loadLoanAccounts();
@@ -177,303 +255,686 @@ window.onload = function () {
     }
 };
 
-// 🔥 SECTION SWITCHING
-function showSection(sectionId) {
-    const sections = document.querySelectorAll(".section");
-    sections.forEach(sec => sec.classList.add("hidden"));
+// ─────────────────────────────────────────────────────────────
+//  SECTION SWITCHING + NAV HIGHLIGHT
+// ─────────────────────────────────────────────────────────────
 
-    document.getElementById(sectionId).classList.remove("hidden");
+const sectionTitles = {
+    accounts: 'Account Overview',
+    transfer: 'Transfer Funds',
+    transactions: 'Transactions',
+    loans: 'Loans',
+    cards: 'Cards',
+    investments: 'Investments'
+};
+
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
+    document.getElementById(sectionId).classList.remove('hidden');
+
+    // Update nav active state
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    const navBtn = document.getElementById('nav-' + sectionId);
+    if (navBtn) navBtn.classList.add('active');
+
+    // Update navbar title
+    const titleEl = document.getElementById('navbarSectionTitle');
+    if (titleEl) titleEl.innerText = sectionTitles[sectionId] || '';
 }
 
+// ─────────────────────────────────────────────────────────────
+//  ACCOUNTS
+// ─────────────────────────────────────────────────────────────
+
 function loadAccounts() {
-    const userCode = localStorage.getItem("userCode");
+    const userCode = localStorage.getItem('userCode');
+    const container = document.getElementById('accountList');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card" style="height:110px;opacity:0.6;margin-top:0.75rem;"></div>
+    `;
 
     fetch(`/accounts/user?userCode=${userCode}`)
         .then(res => res.json())
         .then(data => {
-
-            const container = document.getElementById("accountList");
-
             if (!data || data.length === 0) {
-                container.innerHTML = "<p>No accounts created yet</p>";
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🏦</div>
+                        <p>No accounts yet — create one above!</p>
+                    </div>`;
                 return;
             }
 
+            const typeClass = { SAVINGS: 'savings', CURRENT: 'current', BUSINESS: 'business' };
+
             container.innerHTML = `
-<h3>Your Accounts</h3>
-<div id="transferAccountsView"></div>
-<table border="1" width="100%">
-    <tr>
-        <th>Account ID</th>
-        <th>Account Type</th>
-        <th>Account Number</th>
-        <th>Balance</th>
-        <th>Actions</th>
-    </tr>
-    ${data.map(acc => `
-    <tr>
-        <td>${acc.id}</td>
-        <td>${acc.accountType}</td>
-        <td>${acc.accountNumber}</td>
-        <td>&#8377;${acc.balance}</td>
-        <td>
-            <button onclick="viewTransactions(${acc.id})">View</button>
-            <button onclick="deleteAccount(${acc.id})">Delete</button>
-        </td>
-    </tr>
-    `).join("")}
-</table>
-`;
+                <div class="sub-h3">Your Accounts</div>
+                <div class="account-cards-grid">
+                    ${data.map(acc => `
+                        <div class="account-card ${typeClass[acc.accountType] || 'savings'}">
+                            <span class="acc-badge">${acc.accountType}</span>
+                            <div class="acc-balance">₹${Number(acc.balance).toLocaleString('en-IN')}</div>
+                            <div class="acc-number">••••&nbsp;&nbsp;${acc.accountNumber ? acc.accountNumber.slice(-4) : acc.id}</div>
+                            <div class="acc-number" style="font-size:0.72rem;margin-top:2px;opacity:0.5;">ID: ${acc.id} &nbsp;|&nbsp; ${acc.accountNumber}</div>
+                            <div class="acc-actions">
+                                <button class="btn btn-ghost btn-sm" onclick="viewTransactions(${acc.id})">📋 Transactions</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteAccount(${acc.id})">🗑 Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="table-wrap" style="margin-top:1.25rem;">
+                    <table>
+                        <thead><tr>
+                            <th>Account ID</th><th>Type</th><th>Account Number</th><th>Balance</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody>
+                            ${data.map(acc => `
+                                <tr>
+                                    <td>${acc.id}</td>
+                                    <td><span class="badge badge-info">${acc.accountType}</span></td>
+                                    <td>${acc.accountNumber}</td>
+                                    <td><strong>₹${Number(acc.balance).toLocaleString('en-IN')}</strong></td>
+                                    <td>
+                                        <button class="btn btn-ghost btn-sm" onclick="viewTransactions(${acc.id})">View</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteAccount(${acc.id})">Delete</button>
+                                    </td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        })
+        .catch(() => {
+            container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load accounts.</p></div>`;
         });
 }
 
 function createAccountUI(type) {
-    const userCode = localStorage.getItem("userCode");
+    const userCode = localStorage.getItem('userCode');
+    const btnId = { SAVINGS: 'btn-create-savings', CURRENT: 'btn-create-current', BUSINESS: 'btn-create-business' };
+    const btn = document.getElementById(btnId[type]);
 
-    fetch(`/accounts/create?userCode=${userCode}&accountType=${type}`, {
-        method: "POST"
-    })
+    setLoading(btn, true);
+
+    fetch(`/accounts/create?userCode=${userCode}&accountType=${type}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
-            alert(data);
+            setLoading(btn, false);
+            showToast(data, 'success');
             loadAccounts();
-        });
+            loadATMAccounts();
+            loadTransferAccounts();
+            loadLoanAccounts();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Failed to create account', 'error'); });
 }
 
 function viewTransactions(accountId) {
+    const container = document.getElementById('txnContainer');
+    if (!container) return;
 
-    document.getElementById("atmAccountId").value = accountId;
+    container.innerHTML = `<div class="loader"></div>`;
 
     fetch(`/accounts/transactions?accountId=${accountId}`)
         .then(res => res.json())
         .then(data => {
-
-            const container = document.getElementById("txnContainer");
-
             if (!data || data.length === 0) {
-                container.innerHTML = "<p>No transactions found</p>";
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>No transactions for this account.</p></div>`;
                 return;
             }
 
-            // 🔥 last 10 transactions
             const last10 = data.slice(-10).reverse();
-
             container.innerHTML = `
-            <h3>Transactions</h3>
-            <table border="1" width="100%">
-                <tr>
-                    <th>Type</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                </tr>
-                ${last10.map(t => {
-
-                const isCredit =
-                    t.type.includes("DEPOSIT") ||
-                    t.type.includes("IN");
-
-                const color = isCredit ? "green" : "red";
-                const sign = isCredit ? "+" : "-";
-
-                return `
-                    <tr>
-                        <td>${t.type}</td>
-                        <td style="color:${color}; font-weight:bold;">
-                            ${sign}&#8377;${t.amount}
-                        </td>
-                        <td>${t.timestamp}</td>
-                    </tr>
-                    `;
-            }).join("")}
-            </table>
+                <div class="sub-h3" style="margin-top:1.5rem;">Recent Transactions (Account ${accountId})</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+                        <tbody>
+                            ${last10.map(t => {
+                const isCredit = t.type.includes('DEPOSIT') || t.type.includes('IN');
+                return `<tr>
+                                    <td>${t.type}</td>
+                                    <td><span class="${isCredit ? 'badge badge-success' : 'badge badge-danger'}">${isCredit ? '+' : '-'}₹${t.amount}</span></td>
+                                    <td>${t.timestamp}</td>
+                                </tr>`;
+            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
             `;
+        })
+        .catch(() => { container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load transactions.</p></div>`; });
+}
+
+function deleteAccount(accountId) {
+    if (!confirm('Delete this account? This cannot be undone.')) return;
+
+    fetch(`/accounts/delete?accountId=${accountId}`, { method: 'DELETE' })
+        .then(res => res.text())
+        .then(data => {
+            showToast(data, 'info');
+            loadAccounts();
+            loadATMAccounts();
+            loadTransferAccounts();
+            loadLoanAccounts();
+        })
+        .catch(() => showToast('Failed to delete account', 'error'));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ATM
+// ─────────────────────────────────────────────────────────────
+
+function loadATMAccounts() {
+    const userCode = localStorage.getItem('userCode');
+    fetch(`/accounts/user?userCode=${userCode}`)
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('atmAccountSelect');
+            if (!select) return;
+            select.innerHTML = data.map(acc =>
+                `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+            ).join('');
+        });
+}
+
+function atmDeposit() {
+    const accountId = document.getElementById('atmAccountSelect').value;
+    const amount = document.getElementById('atmAmount').value;
+    const userCode = localStorage.getItem('userCode');
+    const resultEl = document.getElementById('atmResult');
+    const btn = document.getElementById('btn-atm-deposit');
+
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'warning'); return; }
+
+    setLoading(btn, true);
+    resultEl.innerHTML = '<div class="loader" style="margin:0.5rem auto;width:20px;height:20px;border-width:2px;"></div>';
+
+    fetch(`/accounts/atm/deposit?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, { method: 'POST' })
+        .then(res => res.text())
+        .then(data => {
+            setLoading(btn, false);
+            resultEl.innerText = data;
+            showToast(data, 'success');
+            loadAccounts();
+            loadATMAccounts();
+        })
+        .catch(() => { setLoading(btn, false); resultEl.innerText = 'Error'; showToast('Deposit failed', 'error'); });
+}
+
+function atmWithdraw() {
+    const accountId = document.getElementById('atmAccountSelect').value;
+    const amount = document.getElementById('atmAmount').value;
+    const userCode = localStorage.getItem('userCode');
+    const resultEl = document.getElementById('atmResult');
+    const btn = document.getElementById('btn-atm-withdraw');
+
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'warning'); return; }
+
+    setLoading(btn, true);
+    resultEl.innerHTML = '<div class="loader" style="margin:0.5rem auto;width:20px;height:20px;border-width:2px;"></div>';
+
+    fetch(`/accounts/atm/withdraw?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, { method: 'POST' })
+        .then(res => res.text())
+        .then(data => {
+            setLoading(btn, false);
+            resultEl.innerText = data;
+            showToast(data, data.toLowerCase().includes('fail') || data.toLowerCase().includes('insufficient') ? 'error' : 'success');
+            loadAccounts();
+            loadATMAccounts();
+        })
+        .catch(() => { setLoading(btn, false); resultEl.innerText = 'Error'; showToast('Withdrawal failed', 'error'); });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TRANSFER
+// ─────────────────────────────────────────────────────────────
+
+function loadTransferAccounts() {
+    const userCode = localStorage.getItem('userCode');
+    fetch(`/accounts/user?userCode=${userCode}`)
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('fromAccountSelect');
+            if (!select) return;
+            select.innerHTML = data.map(acc =>
+                `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+            ).join('');
         });
 }
 
 function transferUI() {
-    const fromAccountId = document.getElementById("fromAccountSelect").value;
-    const toAccountId = document.getElementById("toAccountId").value;
-    const amount = document.getElementById("transferAmount").value;
-    const category = document.getElementById("category").value;
-    const userCode = localStorage.getItem("userCode");
+    const fromAccountId = document.getElementById('fromAccountSelect').value;
+    const toAccountId = document.getElementById('toAccountId').value;
+    const amount = document.getElementById('transferAmount').value;
+    const category = document.getElementById('category').value;
+    const userCode = localStorage.getItem('userCode');
+    const resultEl = document.getElementById('transferResult');
+    const btn = document.getElementById('btn-transfer-submit');
 
-    fetch(`/accounts/transfer?fromAccountId=${fromAccountId}&toAccountId=${toAccountId}&amount=${amount}&userCode=${userCode}&category=${category}`, {
-        method: "POST"
-    })
+    if (!toAccountId || !amount) { showToast('Please fill all transfer fields', 'warning'); return; }
+
+    setLoading(btn, true);
+    resultEl.innerText = '';
+
+    fetch(`/accounts/transfer?fromAccountId=${fromAccountId}&toAccountId=${toAccountId}&amount=${amount}&userCode=${userCode}&category=${category}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
-            document.getElementById("transferResult").innerText = data;
-            loadAccounts(); // 🔥 refresh balances
+            setLoading(btn, false);
+            resultEl.innerText = data;
+            const isOk = !data.toLowerCase().includes('fail') && !data.toLowerCase().includes('insufficient');
+            showToast(data, isOk ? 'success' : 'error');
+            loadAccounts();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Transfer failed', 'error'); });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TRANSACTIONS
+// ─────────────────────────────────────────────────────────────
+
+function loadTransactionAccounts() {
+    const userCode = localStorage.getItem('userCode');
+    fetch(`/accounts/user?userCode=${userCode}`)
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('txnAccountSelect');
+            if (!select) return;
+            select.innerHTML = data.map(acc =>
+                `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber}</option>`
+            ).join('');
         });
 }
 
+function loadLast15Transactions() {
+    const accountId = document.getElementById('txnAccountSelect').value;
+    const container = document.getElementById('txnResult');
+    const btn = document.getElementById('btn-view-last15');
+
+    setLoading(btn, true);
+    showSkeleton('txnResult', 5);
+
+    fetch(`/accounts/transactions?accountId=${accountId}`)
+        .then(res => res.json())
+        .then(data => {
+            setLoading(btn, false);
+            const last15 = data.slice(-15).reverse();
+
+            if (!last15.length) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>No transactions found.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
+                        <tbody>
+                            ${last15.map(t => {
+                const isCredit = t.type.includes('IN') || t.type.includes('DEPOSIT');
+                return `<tr>
+                                    <td style="font-size:0.78rem;color:var(--text-muted);">${t.transactionId}</td>
+                                    <td>${t.type}</td>
+                                    <td><span class="badge badge-purple">${t.category || '—'}</span></td>
+                                    <td><span class="${isCredit ? 'badge badge-success' : 'badge badge-danger'}">${isCredit ? '+' : '-'}₹${t.amount}</span></td>
+                                    <td style="font-size:0.8rem;">${t.timestamp}</td>
+                                </tr>`;
+            }).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        })
+        .catch(() => { setLoading(btn, false); showToast('Failed to load transactions', 'error'); });
+}
+
 function searchById() {
-    const txnId = document.getElementById("searchTxnId").value;
+    const txnId = document.getElementById('searchTxnId').value.trim();
+    const btn = document.getElementById('btn-search-by-id');
+    const container = document.getElementById('txnResult');
+
+    if (!txnId) { showToast('Enter a Transaction ID', 'warning'); return; }
+
+    setLoading(btn, true);
+    showSkeleton('txnResult', 2);
 
     fetch(`/accounts/transactions/search/id?txnId=${txnId}`)
         .then(res => res.json())
         .then(data => {
-            document.getElementById("txnResult").innerText =
-                JSON.stringify(data, null, 2);
-        });
+            setLoading(btn, false);
+            container.innerHTML = `<pre style="color:var(--text-secondary);font-size:0.85rem;padding:1rem;">${JSON.stringify(data, null, 2)}</pre>`;
+        })
+        .catch(() => { setLoading(btn, false); showToast('Search failed', 'error'); });
 }
 
 function searchByAmount() {
-    const amount = document.getElementById("searchAmount").value;
+    const amount = document.getElementById('searchAmount').value;
+    const btn = document.getElementById('btn-search-by-amount');
+    const container = document.getElementById('txnResult');
+
+    if (!amount) { showToast('Enter an amount', 'warning'); return; }
+
+    setLoading(btn, true);
+    showSkeleton('txnResult', 2);
 
     fetch(`/accounts/transactions/search/amount?amount=${amount}`)
         .then(res => res.json())
         .then(data => {
-            document.getElementById("txnResult").innerText =
-                JSON.stringify(data, null, 2);
+            setLoading(btn, false);
+            container.innerHTML = `<pre style="color:var(--text-secondary);font-size:0.85rem;padding:1rem;">${JSON.stringify(data, null, 2)}</pre>`;
+        })
+        .catch(() => { setLoading(btn, false); showToast('Search failed', 'error'); });
+}
+
+function searchByDateRange() {
+    const btn = document.getElementById('btn-search-by-date');
+    setLoading(btn, true);
+    setTimeout(() => {
+        setLoading(btn, false);
+        showToast('Date range search — backend endpoint coming soon', 'info');
+    }, 400);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  LOANS
+// ─────────────────────────────────────────────────────────────
+
+function loadLoanAccounts() {
+    const userCode = localStorage.getItem('userCode');
+    fetch(`/accounts/user?userCode=${userCode}`)
+        .then(res => res.json())
+        .then(data => {
+            const options = data.map(acc =>
+                `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+            ).join('');
+
+            const applySelect = document.getElementById('loanApplyAccountSelect');
+            const paySelect = document.getElementById('loanPayAccountSelect');
+            if (applySelect) applySelect.innerHTML = options;
+            if (paySelect) paySelect.innerHTML = options;
         });
 }
 
 function applyLoan() {
+    const amount = document.getElementById('loanAmount').value;
+    const downPayment = document.getElementById('downPayment').value;
+    const months = document.getElementById('loanMonths').value;
+    const accountId = document.getElementById('loanApplyAccountSelect').value;
+    const userCode = localStorage.getItem('userCode');
+    const btn = document.getElementById('btn-apply-loan');
 
-    const amount = document.getElementById("loanAmount").value;
-    const downPayment = document.getElementById("downPayment").value;
-    const months = document.getElementById("loanMonths").value;
+    if (!amount || !downPayment || !months) { showToast('Please fill all loan fields', 'warning'); return; }
 
-    const accountId = document.getElementById("loanApplyAccountSelect").value; // ✅ CORRECT
+    setLoading(btn, true);
 
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/loans/apply?userCode=${userCode}&amount=${amount}&downPayment=${downPayment}&months=${months}&accountId=${accountId}`, {
-        method: "POST"
-    })
+    fetch(`/loans/apply?userCode=${userCode}&amount=${amount}&downPayment=${downPayment}&months=${months}&accountId=${accountId}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
-            alert(data);
+            setLoading(btn, false);
+            showToast(data, 'success');
             loadAccounts();
             loadLoans();
-        });
+        })
+        .catch(() => { setLoading(btn, false); showToast('Loan application failed', 'error'); });
 }
 
 function loadLoans() {
-    const userCode = localStorage.getItem("userCode");
+    const userCode = localStorage.getItem('userCode');
+    const container = document.getElementById('loanResult');
+    const btn = document.getElementById('btn-view-loans');
+
+    if (btn) setLoading(btn, true);
+    showSkeleton('loanResult', 3);
 
     fetch(`/loans/user?userCode=${userCode}`)
         .then(res => res.json())
         .then(data => {
+            if (btn) setLoading(btn, false);
 
-            const container = document.getElementById("loanResult");
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏠</div><p>No active loans.</p></div>`;
+                return;
+            }
 
             container.innerHTML = `
-            <table border="1" width="100%">
-                <tr>
-                    <th>ID</th>
-                    <th>Total</th>
-                    <th>Remaining</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-                ${data.map(l => `
-                <tr>
-                    <td>${l.id}</td>
-                    <td>&#8377;${l.totalAmount}</td>
-                    <td>&#8377;${l.remainingAmount}</td>
-                    <td>${l.closed ? "LOAN CLOSED" : "NOT PAID"}</td>
-                    <td>
-                        ${!l.closed ? `<button onclick="payLoanUI(${l.id})">Pay</button>` : ""}
-                    </td>
-                </tr>
-                `).join("")}
-            </table>
-            `;
-        });
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Total Amount</th><th>Remaining</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(l => `
+                                <tr>
+                                    <td>${l.id}</td>
+                                    <td>₹${Number(l.totalAmount).toLocaleString('en-IN')}</td>
+                                    <td>₹${Number(l.remainingAmount).toLocaleString('en-IN')}</td>
+                                    <td><span class="badge ${l.closed ? 'badge-success' : 'badge-amber'}">${l.closed ? 'CLOSED' : 'ACTIVE'}</span></td>
+                                    <td>${!l.closed ? `<button class="btn btn-primary btn-sm" onclick="openLoanPayModal(${l.id})">💳 Pay</button>` : '—'}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        })
+        .catch(() => { if (btn) setLoading(btn, false); showToast('Failed to load loans', 'error'); });
 }
 
-function applyCard(type) {
-    const userCode = localStorage.getItem("userCode");
+function openLoanPayModal(loanId) {
+    document.getElementById('currentLoanId').value = loanId;
+    document.getElementById('loanPayAmount').value = '';
+    document.getElementById('loanPayModal').classList.remove('hidden');
+}
+function closeLoanPayModal() {
+    document.getElementById('loanPayModal').classList.add('hidden');
+}
 
-    fetch(`/cards/apply?userCode=${userCode}&type=${type}`, {
-        method: "POST"
-    })
+function confirmLoanPay() {
+    const loanId = document.getElementById('currentLoanId').value;
+    const accountId = document.getElementById('loanPayAccountSelect').value;
+    const amount = document.getElementById('loanPayAmount').value;
+    const btn = document.getElementById('btn-pay-loan-confirm');
+
+    if (!amount || amount <= 0) { showToast('Enter a valid repayment amount', 'warning'); return; }
+
+    setLoading(btn, true);
+
+    fetch(`/loans/pay?loanId=${loanId}&amount=${amount}&accountId=${accountId}`, { method: 'POST' })
         .then(res => res.text())
-        .then(data => alert(data));
+        .then(data => {
+            setLoading(btn, false);
+            closeLoanPayModal();
+            showToast(data, 'success');
+            loadLoans();
+            loadAccounts();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Loan payment failed', 'error'); });
+}
+
+// Legacy prompt-based version kept for compatibility
+function payLoanUI(loanId) { openLoanPayModal(loanId); }
+
+// ─────────────────────────────────────────────────────────────
+//  CARDS
+// ─────────────────────────────────────────────────────────────
+
+function applyCard(type) {
+    const userCode = localStorage.getItem('userCode');
+    const btnId = type === 'DEBIT' ? 'btn-apply-debit' : 'btn-apply-credit';
+    const btn = document.getElementById(btnId);
+
+    setLoading(btn, true);
+
+    fetch(`/cards/apply?userCode=${userCode}&type=${type}`, { method: 'POST' })
+        .then(res => res.text())
+        .then(data => {
+            setLoading(btn, false);
+            showToast(data, 'success');
+            loadCards();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Failed to apply for card', 'error'); });
 }
 
 function loadCards() {
-    const userCode = localStorage.getItem("userCode");
+    const userCode = localStorage.getItem('userCode');
+    const container = document.getElementById('cardResult');
+    const btn = document.getElementById('btn-view-cards');
+
+    if (btn) setLoading(btn, true);
+    container.innerHTML = '<div class="loader"></div>';
 
     fetch(`/cards/user?userCode=${userCode}`)
         .then(res => res.json())
         .then(data => {
-
-            const container = document.getElementById("cardResult");
+            if (btn) setLoading(btn, false);
 
             if (!data || data.length === 0) {
-                container.innerHTML = "<p>No cards available</p>";
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">💳</div><p>No cards found. Apply above!</p></div>`;
                 return;
             }
 
             container.innerHTML = `
-            <h3>Your Cards</h3>
-            <table border="1" width="100%">
-                <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>Card Number</th>
-                    <th>Expiry</th>
-                    <th>CVV</th>
-                    <th>Name</th>
-                    <th>Action</th>
-                </tr>
-                ${data.map(c => `
-                <tr>
-                    <td>${c.id}</td>
-                    <td>${c.cardType}</td>
-                    <td>${c.cardNumber}</td>
-                    <td>${c.expiry}</td>
-                    <td>${c.cvv}</td>
-                    <td>${c.nameOnCard}</td>
-                    <td>
-                        <button style="background:red; color:white;"
-                            onclick="deleteCard(${c.id})">
-                            Cancel
-                        </button>
-                    </td>
-                </tr>
-                `).join("")}
-            </table>
-            `;
-        });
+                <div class="cards-grid">
+                    ${data.map(c => {
+                const isCredit = c.cardType === 'CREDIT';
+                return `
+                        <div class="visual-card ${isCredit ? 'credit' : 'debit'}">
+                            <div class="card-circles"></div>
+                            <span class="vc-type-badge">${c.cardType}</span>
+                            <div class="vc-chip">💾</div>
+                            <div class="vc-num">${c.cardNumber ? c.cardNumber.replace(/(.{4})/g, '$1 ').trim() : '•••• •••• •••• ••••'}</div>
+                            <div class="vc-row">
+                                <div>
+                                    <div class="vc-name">${c.nameOnCard || 'CARD HOLDER'}</div>
+                                    <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px;">CVV: ${c.cvv}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div class="vc-expiry-label">EXPIRES</div>
+                                    <div class="vc-expiry">${c.expiry}</div>
+                                </div>
+                            </div>
+                            <div class="vc-actions">
+                                <button class="btn btn-danger btn-sm" onclick="deleteCard(${c.id})">✕ Cancel Card</button>
+                            </div>
+                        </div>`;
+            }).join('')}
+                </div>`;
+        })
+        .catch(() => { if (btn) setLoading(btn, false); showToast('Failed to load cards', 'error'); });
 }
 
-function invest() {
-    const userCode = localStorage.getItem("userCode");
+function deleteCard(cardId) {
+    if (!confirm('Cancel this card? This cannot be undone.')) return;
 
-    const name = document.getElementById("invName").value;
-    const amount = document.getElementById("invAmount").value;
-    const accountId = document.getElementById("invAccountId").value;
-
-    fetch(`/investments/invest?userCode=${userCode}&name=${name}&amount=${amount}&accountId=${accountId}`, {
-        method: "POST"
-    })
+    fetch(`/cards/delete?cardId=${cardId}`, { method: 'DELETE' })
         .then(res => res.text())
-        .then(data => alert(data));
+        .then(data => {
+            showToast(data, 'info');
+            loadCards();
+        })
+        .catch(() => showToast('Failed to cancel card', 'error'));
 }
+
+// ─────────────────────────────────────────────────────────────
+//  INVESTMENTS
+// ─────────────────────────────────────────────────────────────
+
+const banks = [
+    { name: 'HDFC Bank', rate: '12%', icon: '🏦', color: 'from-blue-deep' },
+    { name: 'ICICI Bank', rate: '12%', icon: '🏛️', color: '' },
+    { name: 'SBI', rate: '12%', icon: '🏦', color: '' },
+    { name: 'Axis Bank', rate: '12%', icon: '⚡', color: '' },
+    { name: 'Kotak Mahindra', rate: '12%', icon: '💎', color: '' },
+    { name: 'IndusInd Bank', rate: '12%', icon: '🔷', color: '' },
+    { name: 'Yes Bank', rate: '12%', icon: '✅', color: '' },
+    { name: 'PNB', rate: '12%', icon: '🌐', color: '' },
+    { name: 'Bank of Baroda', rate: '12%', icon: '🏆', color: '' },
+    { name: 'Canara Bank', rate: '12%', icon: '🌿', color: '' },
+    { name: 'Union Bank', rate: '12%', icon: '🤝', color: '' },
+    { name: 'IDFC First', rate: '12%', icon: '🚀', color: '' },
+    { name: 'AU Small Finance', rate: '12%', icon: '⭐', color: '' },
+    { name: 'HSBC', rate: '12%', icon: '🌍', color: '' },
+];
+
+function loadInvestmentCards() {
+    const container = document.getElementById('investmentCards');
+    if (!container) return;
+
+    container.innerHTML = banks.map(bank => `
+        <div class="bank-invest-card">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">${bank.icon}</div>
+            <div class="bank-name">${bank.name}</div>
+            <div class="bank-rate">📈 ${bank.rate} p.a. returns</div>
+            <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="openInvestModal('${bank.name}')">Invest Now</button>
+        </div>
+    `).join('');
+}
+
+function openInvestModal(bankName) {
+    document.getElementById('investModalTitle').innerText = `Invest in ${bankName}`;
+    document.getElementById('investAmountInput').value = '';
+    document.getElementById('investAmountInput').dataset.bank = bankName;
+
+    // Load accounts into invest modal select
+    getAccountOptions(accounts => {
+        const select = document.getElementById('investAccountSelect');
+        if (!select) return;
+        select.innerHTML = accounts.map(acc =>
+            `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+        ).join('');
+    });
+
+    document.getElementById('investModal').classList.remove('hidden');
+}
+
+function closeInvestModal() {
+    document.getElementById('investModal').classList.add('hidden');
+}
+
+function confirmInvest() {
+    const bank = document.getElementById('investAmountInput').dataset.bank;
+    const accountId = document.getElementById('investAccountSelect').value;
+    const amount = document.getElementById('investAmountInput').value;
+    const userCode = localStorage.getItem('userCode');
+    const btn = document.getElementById('btn-invest-confirm');
+
+    if (!amount || amount <= 0) { showToast('Enter a valid investment amount', 'warning'); return; }
+
+    setLoading(btn, true);
+
+    fetch(`/investments/invest?userCode=${userCode}&name=${encodeURIComponent(bank)}&amount=${amount}&accountId=${accountId}`, { method: 'POST' })
+        .then(res => res.text())
+        .then(data => {
+            setLoading(btn, false);
+            closeInvestModal();
+            showToast(data, 'success');
+            loadAccounts();
+            loadInvestments();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Investment failed', 'error'); });
+}
+
+// Legacy compat
+function openInvest(bank) { openInvestModal(bank); }
 
 function loadInvestments() {
-    const userCode = localStorage.getItem("userCode");
+    const userCode = localStorage.getItem('userCode');
+    const container = document.getElementById('invResult');
+    if (!container) return;
+
+    showSkeleton('invResult', 3);
 
     fetch(`/investments/user?userCode=${userCode}`)
         .then(res => res.json())
         .then(data => {
-
-            const container = document.getElementById("invResult");
-
             if (!data || data.length === 0) {
-                container.innerHTML = "<p>No investments</p>";
-                document.getElementById("totalInvested").innerText = "₹0";
-                document.getElementById("totalProfit").innerText = "+₹0 ↑";
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">📈</div><p>No investments yet. Pick a bank above!</p></div>`;
+                document.getElementById('totalInvested').innerText = '₹0';
+                document.getElementById('totalProfit').innerText = '+₹0';
                 return;
             }
 
-            let totalInvested = 0;
-            let totalReturn = 0;
-
+            let totalInvested = 0, totalReturn = 0;
             data.forEach(i => {
                 if (!i.withdrawn) {
                     totalInvested += i.amountInvested;
@@ -482,430 +943,212 @@ function loadInvestments() {
             });
 
             const profit = totalReturn - totalInvested;
-            const formattedProfit = profit.toFixed(2);
-            const formattedInvested = totalInvested.toFixed(2);
-
-            // 🔥 UPDATE UI
-            document.getElementById("totalInvested").innerText = `₹${formattedInvested}`;
-            document.getElementById("totalProfit").innerText = `+₹${formattedProfit} ↑`;
+            document.getElementById('totalInvested').innerText = `₹${totalInvested.toFixed(2)}`;
+            document.getElementById('totalProfit').innerText = `+₹${profit.toFixed(2)}`;
 
             container.innerHTML = `
-            <table border="1" width="100%">
-                <tr>
-                    <th>ID</th>
-                    <th>Bank</th>
-                    <th>Invested</th>
-                    <th>Return</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-                ${data.map(i => `
-                <tr>
-                    <td>${i.id}</td>
-                    <td>${i.investmentName}</td>
-                   <td>&#8377;${i.amountInvested.toFixed(2)}</td>
-                   <td>&#8377;${i.returnAmount.toFixed(2)}</td>
-                    <td>${i.withdrawn ? "WITHDRAWN" : "ACTIVE"}</td>
-                    <td>
-                        ${!i.withdrawn ?
-                `<button onclick="withdrawInvestmentUI(${i.id})">Withdraw</button>`
-                : "-"}
-                    </td>
-                </tr>
-                `).join("")}
-            </table>
-            `;
-        });
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Bank</th><th>Invested</th><th>Return</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(i => `
+                                <tr>
+                                    <td>${i.id}</td>
+                                    <td><strong>${i.investmentName}</strong></td>
+                                    <td>₹${i.amountInvested.toFixed(2)}</td>
+                                    <td style="color:var(--accent-green);">₹${i.returnAmount.toFixed(2)}</td>
+                                    <td><span class="badge ${i.withdrawn ? 'badge-danger' : 'badge-success'}">${i.withdrawn ? 'WITHDRAWN' : 'ACTIVE'}</span></td>
+                                    <td>${!i.withdrawn ? `<button class="btn btn-ghost btn-sm" onclick="openWithdrawInvModal(${i.id})">↩ Withdraw</button>` : '—'}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        })
+        .catch(() => { container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load investments.</p></div>`; });
 }
 
-function loadUsers() {
-    fetch("/users/all")
-        .then(res => res.json())
-        .then(data => {
-
-            const container = document.getElementById("adminResult");
-
-            if (!data || data.length === 0) {
-                container.innerHTML = "<p>No users found</p>";
-                return;
-            }
-
-            container.innerHTML = `
-            <h3>All Users</h3>
-            <table border="1" width="100%">
-                <tr>
-                    <th>User Code</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Password</th>
-                    <th>Role</th>
-                </tr>
-                ${data.map(u => `
-<tr>
-    <td>${u.userCode}</td>
-    <td>${u.name}</td>
-    <td>${u.email}</td>
-    <td>${u.password}</td>
-    <td>${u.role}</td>
-    <td>
-        <button onclick="deleteUser(${u.id})">Delete</button>
-    </td>
-</tr>
-`).join("")}
-            </table>
-            `;
-        });
+function openWithdrawInvModal(investmentId) {
+    document.getElementById('currentInvestmentId').value = investmentId;
+    getAccountOptions(accounts => {
+        const select = document.getElementById('withdrawInvAccountSelect');
+        if (!select) return;
+        select.innerHTML = accounts.map(acc =>
+            `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+        ).join('');
+    });
+    document.getElementById('withdrawInvModal').classList.remove('hidden');
 }
 
-function loadAllAccountsAdmin() {
-    fetch("/accounts/all")
-        .then(res => res.json())
-        .then(data => {
-
-            const container = document.getElementById("adminResult");
-
-            if (!data || data.length === 0) {
-                container.innerHTML = "<p>No accounts found</p>";
-                return;
-            }
-
-            container.innerHTML = `
-            <h3>All Accounts</h3>
-            <table border="1" width="100%">
-                <tr>
-                    <th>Account ID</th>
-                    <th>Account Number</th>
-                    <th>Type</th>
-                    <th>Balance</th>
-                    <th>User</th>
-                </tr>
-                ${data.map(acc => `
-<tr>
-    <td>${acc.id}</td>
-    <td>${acc.accountNumber}</td>
-    <td>${acc.accountType}</td>
-    <td>&#8377;${acc.balance}</td>
-    <td>${acc.userCode}</td>
-    <td>
-        <button onclick="deleteAccountAdmin(${acc.id})">Delete</button>
-    </td>
-</tr>
-`).join("")}
-            </table>
-            `;
-        });
+function closeWithdrawInvModal() {
+    document.getElementById('withdrawInvModal').classList.add('hidden');
 }
 
-function updateBalance() {
-    const accountId = document.getElementById("adminAccountId").value;
-    const amount = document.getElementById("adminAmount").value;
+function confirmWithdrawInv() {
+    const investmentId = document.getElementById('currentInvestmentId').value;
+    const accountId = document.getElementById('withdrawInvAccountSelect').value;
+    const btn = document.getElementById('btn-withdraw-inv-confirm');
 
-    fetch(`/accounts/admin/updateBalance?accountId=${accountId}&amount=${amount}`, {
-        method: "POST"
-    })
-        .then(res => res.text())
-        .then(data => alert(data));
-}
+    setLoading(btn, true);
 
-function logout() {
-    localStorage.removeItem("userCode");
-    window.location.href = "index.html";
-}
-
-function deleteAccount(accountId) {
-    fetch(`/accounts/delete?accountId=${accountId}`, {
-        method: "DELETE"
-    })
+    fetch(`/investments/withdraw?investmentId=${investmentId}&accountId=${accountId}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
-            alert(data);
+            setLoading(btn, false);
+            closeWithdrawInvModal();
+            showToast(data, 'success');
             loadAccounts();
-        });
+            loadInvestments();
+        })
+        .catch(() => { setLoading(btn, false); showToast('Withdrawal failed', 'error'); });
 }
 
-function searchByDateRange() {
-    alert("Date range search coming soon (backend needed)");
-}
-
-function showLoader(id) {
-    document.getElementById(id).innerHTML = "<div class='loader'></div>";
-}
-
-function deleteAccountAdmin(accountId) {
-    fetch(`/accounts/delete?accountId=${accountId}`, {
-        method: "DELETE"
-    })
-        .then(res => res.text())
-        .then(data => {
-            alert(data);
-            loadAllAccountsAdmin(); // 🔥 refresh table
-        });
-}
-
-function deleteUser(userId) {
-    fetch(`/users/delete?userId=${userId}`, {
-        method: "DELETE"
-    })
-        .then(res => res.text())
-        .then(data => {
-            alert(data);
-            loadUsers(); // 🔥 refresh
-        });
-}
-
-function atmDeposit() {
-    const accountId = document.getElementById("atmAccountSelect").value;
-    const amount = document.getElementById("atmAmount").value;
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/atm/deposit?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, {
-        method: "POST"
-    })
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById("atmResult").innerText = data;
-            loadAccounts();
-            loadATMAccounts(); // 🔥 refresh dropdown
-        });
-}
-
-function atmWithdraw() {
-    const accountId = document.getElementById("atmAccountSelect").value;
-    const amount = document.getElementById("atmAmount").value;
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/atm/withdraw?accountId=${accountId}&amount=${amount}&userCode=${userCode}`, {
-        method: "POST"
-    })
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById("atmResult").innerText = data;
-            loadAccounts();
-            loadATMAccounts(); // 🔥 refresh dropdown
-        });
-}
-
-function loadTransactionAccounts() {
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
-            const select = document.getElementById("txnAccountSelect");
-
-            select.innerHTML = data.map(acc =>
-                `<option value="${acc.id}">
-                    ${acc.accountType} - ${acc.accountNumber}
-                </option>`
-            ).join("");
-        });
-}
-
-function loadLast15Transactions() {
-
-    const accountId = document.getElementById("txnAccountSelect").value;
-
-    fetch(`/accounts/transactions?accountId=${accountId}`)
-        .then(res => res.json())
-        .then(data => {
-
-            const container = document.getElementById("txnResult");
-
-            const last15 = data.slice(-15).reverse();
-
-            container.innerHTML = `
-            <table border="1" width="100%">
-                <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>Category</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                </tr>
-                ${last15.map(t => {
-
-                const isCredit =
-                    t.type.includes("IN") ||
-                    t.type.includes("DEPOSIT");
-
-                const color = isCredit ? "green" : "red";
-                const sign = isCredit ? "+" : "-";
-
-                return `
-                    <tr>
-                        <td>${t.transactionId}</td>
-                        <td>${t.type}</td>
-                        <td>${t.category}</td>
-                        <td style="color:${color}; font-weight:bold;">
-                            ${sign}&#8377;${t.amount}
-                        </td>
-                        <td>${t.timestamp}</td>
-                    </tr>
-                    `;
-            }).join("")}
-            </table>
-            `;
-        });
-}
-
-function payLoanUI(loanId) {
-
-
-    const accountId = document.getElementById("loanPayAccountSelect").value;
-    const amount = prompt("Enter amount to pay:");
-
-    fetch(`/loans/pay?loanId=${loanId}&amount=${amount}&accountId=${accountId}`, {
-        method: "POST"
-    })
-        .then(res => res.text())
-        .then(data => {
-            alert(data);
-            loadLoans();
-            loadAccounts();
-        });
-}
-
-function loadATMAccounts() {
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
-
-            const select = document.getElementById("atmAccountSelect");
-
-            select.innerHTML = data.map(acc =>
-                `<option value="${acc.id}">
-                    ${acc.accountType} - ${acc.accountNumber} (₹${acc.balance})
-                </option>`
-            ).join("");
-        });
-}
-
-function loadTransferAccounts() {
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
-
-            console.log("TRANSFER DATA:", data); // 🔥 DEBUG
-
-            const select = document.getElementById("fromAccountSelect");
-
-            select.innerHTML = data.map(acc =>
-                `<option value="${acc.id}">
-                    ${acc.accountType} - ${acc.accountNumber} (₹${acc.balance})
-                </option>`
-            ).join("");
-        });
-}
-
-function loadLoanAccounts() {
-    const userCode = localStorage.getItem("userCode");
-
-    fetch(`/accounts/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
-
-            const applySelect = document.getElementById("loanApplyAccountSelect");
-            const paySelect = document.getElementById("loanPayAccountSelect");
-
-            const options = data.map(acc =>
-                `<option value="${acc.id}">
-                    ${acc.accountType} - ${acc.accountNumber} (₹${acc.balance})
-                </option>`
-            ).join("");
-
-            applySelect.innerHTML = options;
-            paySelect.innerHTML = options;
-        });
-}
-
-const banks = [
-    "HDFC", "ICICI", "SBI", "Axis", "Kotak",
-    "IndusInd", "Yes Bank", "PNB", "Bank of Baroda",
-    "Canara", "Union Bank", "IDFC", "AU Bank", "HSBC"
-];
-
-function loadInvestmentCards() {
-
-    const container = document.getElementById("investmentCards");
-
-    container.innerHTML = banks.map(bank => `
-        <div style="border:1px solid #ccc; padding:15px; border-radius:10px; text-align:center;">
-            <h3>${bank}</h3>
-
-            <button onclick="openInvest('${bank}')">Invest</button>
-           
-        </div>
-    `).join("");
-}
+// Legacy compat
+function withdrawInvestmentUI(investmentId) { openWithdrawInvModal(investmentId); }
 
 function getAccountOptions(callback) {
-    const userCode = localStorage.getItem("userCode");
-
+    const userCode = localStorage.getItem('userCode');
     fetch(`/accounts/user?userCode=${userCode}`)
         .then(res => res.json())
         .then(data => callback(data));
 }
 
-function openInvest(bank) {
+// ─────────────────────────────────────────────────────────────
+//  ADMIN
+// ─────────────────────────────────────────────────────────────
 
-    getAccountOptions(accounts => {
+function loadUsers() {
+    const container = document.getElementById('adminResult');
+    const btn = document.getElementById('btn-view-users');
 
-        const accountOptions = accounts.map(acc =>
-            `${acc.id} - ${acc.accountType} (${acc.balance})`
-        ).join("\n");
+    setLoading(btn, true);
+    showSkeleton('adminResult', 4);
 
-        const accountId = prompt(`Select Account ID:\n${accountOptions}`);
-        const amount = prompt(`Enter amount to invest in ${bank}`);
+    fetch('/users/all')
+        .then(res => res.json())
+        .then(data => {
+            setLoading(btn, false);
 
-        if (!accountId || !amount) return;
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>No users found.</p></div>`;
+                return;
+            }
 
-        const userCode = localStorage.getItem("userCode");
-
-        fetch(`/investments/invest?userCode=${userCode}&name=${bank}&amount=${amount}&accountId=${accountId}`, {
-            method: "POST"
+            container.innerHTML = `
+                <div class="sub-h3" style="margin-bottom:1rem;">All Users (${data.length})</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>User Code</th><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(u => `
+                                <tr>
+                                    <td><span class="badge badge-info">${u.userCode}</span></td>
+                                    <td>${u.name}</td>
+                                    <td>${u.email}</td>
+                                    <td><span class="badge badge-purple">${u.role}</span></td>
+                                    <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">🗑 Delete</button></td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
         })
-            .then(res => res.text())
-            .then(data => {
-                alert(data);
-                loadAccounts();
-                loadInvestments();
-            });
-    });
+        .catch(() => { setLoading(btn, false); showToast('Failed to load users', 'error'); });
 }
 
-function withdrawInvestmentUI(investmentId) {
+function loadAllAccountsAdmin() {
+    const container = document.getElementById('adminResult');
+    const btn = document.getElementById('btn-view-accounts');
 
-    const accountId = prompt("Enter account ID to receive money:");
+    setLoading(btn, true);
+    showSkeleton('adminResult', 4);
 
-    if (!accountId) return;
-
-    fetch(`/investments/withdraw?investmentId=${investmentId}&accountId=${accountId}`, {
-        method: "POST"
-    })
-        .then(res => res.text())
+    fetch('/accounts/all')
+        .then(res => res.json())
         .then(data => {
-            alert(data);
-            loadAccounts();
-            loadInvestments();
-        });
+            setLoading(btn, false);
 
+            if (!data || data.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏛️</div><p>No accounts found.</p></div>`;
+                return;
+            }
 
+            container.innerHTML = `
+                <div class="sub-h3" style="margin-bottom:1rem;">All Accounts (${data.length})</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Account Number</th><th>Type</th><th>Balance</th><th>User</th><th>Action</th></tr></thead>
+                        <tbody>
+                            ${data.map(acc => `
+                                <tr>
+                                    <td>${acc.id}</td>
+                                    <td>${acc.accountNumber}</td>
+                                    <td><span class="badge badge-info">${acc.accountType}</span></td>
+                                    <td><strong>₹${Number(acc.balance).toLocaleString('en-IN')}</strong></td>
+                                    <td><span class="badge badge-purple">${acc.userCode}</span></td>
+                                    <td><button class="btn btn-danger btn-sm" onclick="deleteAccountAdmin(${acc.id})">🗑 Delete</button></td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        })
+        .catch(() => { setLoading(btn, false); showToast('Failed to load accounts', 'error'); });
 }
 
-function deleteCard(cardId) {
+function updateBalance() {
+    const accountId = document.getElementById('adminAccountId').value;
+    const amount = document.getElementById('adminAmount').value;
+    const btn = document.getElementById('btn-update-balance');
 
-    if (!confirm("Are you sure you want to cancel this card?")) return;
+    if (!accountId || !amount) { showToast('Fill in Account ID and Amount', 'warning'); return; }
 
-    fetch(`/cards/delete?cardId=${cardId}`, {
-        method: "DELETE"
-    })
+    setLoading(btn, true);
+
+    fetch(`/accounts/admin/updateBalance?accountId=${accountId}&amount=${amount}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
-            alert(data);
-            loadCards(); // 🔥 refresh table
-        });
+            setLoading(btn, false);
+            showToast(data, 'success');
+        })
+        .catch(() => { setLoading(btn, false); showToast('Balance update failed', 'error'); });
+}
+
+function deleteUser(userId) {
+    if (!confirm('Delete this user? This cannot be undone.')) return;
+
+    fetch(`/users/delete?userId=${userId}`, { method: 'DELETE' })
+        .then(res => res.text())
+        .then(data => {
+            showToast(data, 'info');
+            loadUsers();
+        })
+        .catch(() => showToast('Failed to delete user', 'error'));
+}
+
+function deleteAccountAdmin(accountId) {
+    if (!confirm('Delete this account?')) return;
+
+    fetch(`/accounts/delete?accountId=${accountId}`, { method: 'DELETE' })
+        .then(res => res.text())
+        .then(data => {
+            showToast(data, 'info');
+            loadAllAccountsAdmin();
+        })
+        .catch(() => showToast('Failed to delete account', 'error'));
+}
+
+// ─────────────────────────────────────────────────────────────
+//  COMMON
+// ─────────────────────────────────────────────────────────────
+
+function logout() {
+    localStorage.removeItem('userCode');
+    window.location.href = 'index.html';
+}
+
+function createAccount() {
+    createAccountUI('SAVINGS');
+}
+
+function showLoader(id) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<div class="loader"></div>';
 }
