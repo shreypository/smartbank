@@ -1,57 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BankNotFound</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank — Smart Digital Banking</title>
+    <meta name="description" content="BugBank — A modern, secure, and intelligent digital banking platform. Manage accounts, transfers, investments, cards and loans all in one place.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="landing-container">
-    <h1 class="title">Welcome to BNF</h1>
+<!-- Animated Background -->
+<div class="landing-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+<div class="landing-grid"></div>
 
-    <div class="buttons">
-        <button onclick="openModal('login')">Login</button>
-        <button onclick="openModal('register')">Register</button>
-        <button onclick="openModal('admin')">Admin Login</button>
+<!-- Landing Content -->
+<div class="landing-container">
+
+    <div class="brand-wrap">
+        <div class="brand-icon">🏦</div>
+        <h1 class="brand-title">BugBank</h1>
+        <p class="brand-sub">Smart &nbsp;•&nbsp; Secure &nbsp;•&nbsp; Modern Banking</p>
     </div>
+
+    <div class="landing-buttons">
+        <button id="btn-login" class="btn-landing btn-primary-land" onclick="openModal('login')">
+            🔐 &nbsp;Login
+        </button>
+        <button id="btn-register" class="btn-landing btn-outline-land" onclick="openModal('register')">
+            ✨ &nbsp;Register
+        </button>
+        <button id="btn-admin" class="btn-landing btn-admin-land" onclick="openModal('admin')">
+            🛡️ &nbsp;Admin Login
+        </button>
+    </div>
+
+    <div class="landing-stats">
+        <div class="stat-item">
+            <div class="stat-num">₹0 Fee</div>
+            <div class="stat-label">Zero Hidden Charges</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">24/7</div>
+            <div class="stat-label">Customer Support</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">2 sec</div>
+            <div class="stat-label">Instant Transfers</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">12%</div>
+            <div class="stat-label">Investment Returns</div>
+        </div>
+    </div>
+
 </div>
 
-<!-- 🔥 MODAL -->
+<!-- ═══════════════════════════════════ MODAL ═══ -->
 <div id="modal" class="modal hidden">
     <div class="modal-card">
 
-        <span class="close" onclick="closeModal()">✖</span>
+        <button class="modal-close" id="btn-close-modal" onclick="closeModal()">✕</button>
+
+        <!-- Tab switcher (login / register only) -->
+        <div id="authTabs" class="modal-tabs">
+            <button id="tab-login" class="modal-tab active" onclick="switchTab('login')">Sign In</button>
+            <button id="tab-register" class="modal-tab" onclick="switchTab('register')">Register</button>
+        </div>
 
         <!-- LOGIN -->
-        <div id="loginForm" class="form hidden">
-            <h2>Login</h2>
-            <input type="text" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="login()">Login</button>
+        <div id="loginForm" class="form">
+            <h2>Welcome back</h2>
+            <p class="form-sub">Sign in to your BugBank account</p>
+
+            <div class="input-group">
+                <span class="input-icon">📧</span>
+                <input type="email" id="email" placeholder="Email address" autocomplete="email">
+            </div>
+            <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+            </div>
+            <button id="btn-login-submit" class="btn-modal-submit" onclick="login()">Sign In →</button>
         </div>
 
         <!-- REGISTER -->
         <div id="registerForm" class="form hidden">
-            <h2>Register</h2>
-            <input type="text" id="name" placeholder="Name">
-            <input type="text" id="regEmail" placeholder="Email">
-            <input type="password" id="regPassword" placeholder="Password">
-            <button onclick="register()">Register</button>
+            <h2>Create Account</h2>
+            <p class="form-sub">Open your BugBank account in seconds</p>
+
+            <div class="input-group">
+                <span class="input-icon">👤</span>
+                <input type="text" id="name" placeholder="Full name">
+            </div>
+            <div class="input-group">
+                <span class="input-icon">📧</span>
+                <input type="email" id="regEmail" placeholder="Email address">
+            </div>
+            <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="regPassword" placeholder="Create password">
+            </div>
+            <button id="btn-register-submit" class="btn-modal-submit" onclick="register()">Create Account →</button>
         </div>
 
         <!-- ADMIN -->
         <div id="adminForm" class="form hidden">
-            <h2>Admin Login</h2>
-            <input type="text" id="adminUser" placeholder="Username">
-            <input type="password" id="adminPass" placeholder="Password">
-            <button onclick="adminLogin()">Login</button>
+            <h2>Admin Console</h2>
+            <p class="form-sub">Restricted access — authorised personnel only</p>
+
+            <div class="input-group">
+                <span class="input-icon">🛡️</span>
+                <input type="text" id="adminUser" placeholder="Admin username">
+            </div>
+            <div class="input-group">
+                <span class="input-icon">🔑</span>
+                <input type="password" id="adminPass" placeholder="Admin password">
+            </div>
+            <button id="btn-admin-submit" class="btn-modal-submit" onclick="adminLogin()">Enter Console →</button>
         </div>
 
         <p id="message"></p>
 
     </div>
 </div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
 
 <script src="script.js"></script>
 </body>

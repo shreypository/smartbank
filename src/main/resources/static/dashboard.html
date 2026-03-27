@@ -1,192 +1,365 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank Dashboard</title>
+    <meta name="description" content="BugBank dashboard — manage your accounts, transfers, loans, cards and investments in one place.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="dashboard">
 
-    <!-- 🔝 NAVBAR -->
-    <div class="navbar">
-        <h2>BNF</h2>
-        <div>
-            <span id="userCodeDisplay"></span>
-            <button onclick="logout()">Logout</button>
+    <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🏦</div>
+            <span class="sidebar-brand">BugBank</span>
         </div>
-    </div>
 
-    <!-- 📚 SIDEBAR -->
-    <div class="sidebar">
-        <button onclick="showSection('accounts')">Accounts</button>
-        <button onclick="showSection('transfer')">Transfer</button>
-        <button onclick="showSection('transactions')">Transactions</button>
-        <button onclick="showSection('loans')">Loans</button>
-        <button onclick="showSection('cards')">Cards</button>
-        <button onclick="showSection('investments')">Investments</button>
-    </div>
+        <div class="sidebar-nav">
+            <button id="nav-accounts"    class="nav-item active"  onclick="showSection('accounts')">
+                <span class="nav-icon">🏛️</span><span>Accounts</span>
+            </button>
+            <button id="nav-transfer"    class="nav-item" onclick="showSection('transfer')">
+                <span class="nav-icon">↔️</span><span>Transfer</span>
+            </button>
+            <button id="nav-transactions" class="nav-item" onclick="showSection('transactions')">
+                <span class="nav-icon">📋</span><span>Transactions</span>
+            </button>
+            <button id="nav-loans"       class="nav-item" onclick="showSection('loans')">
+                <span class="nav-icon">🏠</span><span>Loans</span>
+            </button>
+            <button id="nav-cards"       class="nav-item" onclick="showSection('cards')">
+                <span class="nav-icon">💳</span><span>Cards</span>
+            </button>
+            <button id="nav-investments" class="nav-item" onclick="showSection('investments')">
+                <span class="nav-icon">📈</span><span>Investments</span>
+            </button>
+        </div>
 
-    <!-- 📦 MAIN CONTENT -->
-    <div class="main">
+        <div class="sidebar-footer">
+            <div class="user-chip">
+                <div class="user-avatar" id="userAvatarInitial">U</div>
+                <div class="user-info">
+                    <div class="user-code-label">User Code</div>
+                    <div class="user-code-val" id="userCodeDisplay">—</div>
+                </div>
+            </div>
+        </div>
+    </nav>
 
+    <!-- ══════════════════════ NAVBAR ══════════════════════ -->
+    <header class="navbar">
+        <span class="navbar-title" id="navbarSectionTitle">Account Overview</span>
+        <div class="navbar-right">
+            <span id="userCodeDisplay2"></span>
+            <button id="btn-logout" class="btn-logout" onclick="logout()">⏻ Logout</button>
+        </div>
+    </header>
+
+    <!-- ══════════════════════ MAIN ══════════════════════ -->
+    <main class="main">
+
+        <!-- ─── ACCOUNTS ─── -->
         <div id="accounts" class="section">
-
-            <h2>Account Overview</h2>
-
-            <!-- CREATE ACCOUNT -->
-            <div>
-                <button onclick="createAccountUI('SAVINGS')">Create Savings</button>
-                <button onclick="createAccountUI('CURRENT')">Create Current</button>
-                <button onclick="createAccountUI('BUSINESS')">Create Business</button>
+            <div class="section-header">
+                <h2>🏛️ Account Overview</h2>
+                <p>Manage and monitor all your bank accounts</p>
             </div>
 
-            <hr>
+            <!-- Create buttons -->
+            <div class="create-btns">
+                <button id="btn-create-savings"  class="btn btn-primary" onclick="createAccountUI('SAVINGS')">
+                    ＋ Savings Account
+                </button>
+                <button id="btn-create-current"  class="btn btn-ghost" onclick="createAccountUI('CURRENT')">
+                    ＋ Current Account
+                </button>
+                <button id="btn-create-business" class="btn btn-ghost" onclick="createAccountUI('BUSINESS')">
+                    ＋ Business Account
+                </button>
+            </div>
 
-            <!-- ACCOUNT LIST -->
-            <div id="accountList"></div>
+            <!-- Account cards list -->
+            <div id="accountList">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card" style="height:100px;opacity:0.6"></div>
+            </div>
 
+            <!-- Transactions preview -->
             <div id="txnContainer"></div>
 
-            <hr>
+            <div class="divider"></div>
 
-            <h3>ATM Operations</h3>
-
-            <select id="atmAccountSelect"></select>
-            <input type="number" id="atmAmount" placeholder="Enter Amount">
-
-            <br><br>
-
-            <button style="background:green; color:white;" onclick="atmDeposit()">Deposit</button>
-            <button style="background:red; color:white;" onclick="atmWithdraw()">Withdraw</button>
-
-            <p id="atmResult"></p>
-
+            <!-- ATM Operations -->
+            <div class="sub-h3">🏧 ATM Operations</div>
+            <div class="atm-card-wrap">
+                <div class="atm-visual">
+                    <div class="atm-chip">💾</div>
+                    <div>
+                        <div class="atm-label">Selected Account</div>
+                        <div class="atm-value">
+                            <select id="atmAccountSelect" style="background:transparent;border:none;color:#fff;font-family:inherit;font-size:1rem;cursor:pointer;outline:none;width:100%;"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-card" style="margin-bottom:0;">
+                    <div class="form-field" style="margin-bottom:1rem;">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="atmAmount" placeholder="Enter amount">
+                    </div>
+                    <div style="display:flex;gap:0.75rem;">
+                        <button id="btn-atm-deposit"  class="btn btn-success" style="flex:1;" onclick="atmDeposit()">⬆ Deposit</button>
+                        <button id="btn-atm-withdraw" class="btn btn-danger"  style="flex:1;" onclick="atmWithdraw()">⬇ Withdraw</button>
+                    </div>
+                    <div id="atmResult" class="result-box"></div>
+                </div>
+            </div>
         </div>
 
+        <!-- ─── TRANSFER ─── -->
         <div id="transfer" class="section hidden">
+            <div class="section-header">
+                <h2>↔️ Transfer Funds</h2>
+                <p>Send money securely to any account</p>
+            </div>
 
-            <h2>Transfer Funds</h2>
-
-            <select id="fromAccountSelect"></select>
-            <input type="number" id="toAccountId" placeholder="Receiver Account ID">
-            <input type="number" id="transferAmount" placeholder="Amount">
-
-            <select id="category">
-                <option value="friend">Friend/Family</option>
-                <option value="loan">Loan</option>
-                <option value="investment">Investment</option>
-                <option value="grocery">Grocery</option>
-                <option value="travel">Travel</option>
-                <option value="PERSONAL">Personal</option>
-            </select>
-
-            <button onclick="transferUI()">Transfer</button>
-
-            <p id="transferResult"></p>
-
+            <div class="form-card">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>From Account</label>
+                        <select id="fromAccountSelect"></select>
+                    </div>
+                    <div class="form-field">
+                        <label>Receiver Account ID</label>
+                        <input type="number" id="toAccountId" placeholder="e.g. 1023">
+                    </div>
+                    <div class="form-field">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="transferAmount" placeholder="e.g. 5000">
+                    </div>
+                    <div class="form-field">
+                        <label>Category</label>
+                        <select id="category">
+                            <option value="friend">Friend / Family</option>
+                            <option value="loan">Loan</option>
+                            <option value="investment">Investment</option>
+                            <option value="grocery">Grocery</option>
+                            <option value="travel">Travel</option>
+                            <option value="PERSONAL">Personal</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="btn-transfer-submit" class="btn btn-primary" onclick="transferUI()">Send Money →</button>
+                <div id="transferResult" class="result-box"></div>
+            </div>
         </div>
 
+        <!-- ─── TRANSACTIONS ─── -->
         <div id="transactions" class="section hidden">
+            <div class="section-header">
+                <h2>📋 Transactions</h2>
+                <p>View and search your transaction history</p>
+            </div>
 
-            <h2>Find Transactions</h2>
+            <!-- View last 15 -->
+            <div class="form-card">
+                <div class="sub-h3" style="margin-bottom:1rem;">View Recent</div>
+                <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+                    <div class="form-field" style="flex:1;min-width:180px;">
+                        <label>Account</label>
+                        <select id="txnAccountSelect"></select>
+                    </div>
+                    <button id="btn-view-last15" class="btn btn-primary" onclick="loadLast15Transactions()">View Last 15</button>
+                </div>
+            </div>
 
-            <select id="txnAccountSelect"></select>
-            <button onclick="loadLast15Transactions()">View Last 15</button>
-
-            <hr>
-
-            <input type="text" id="searchTxnId" placeholder="Transaction ID">
-            <button onclick="searchById()">Search</button>
-
-            <br><br>
-
-            <input type="number" id="searchAmount" placeholder="Amount">
-            <button onclick="searchByAmount()">Search</button>
-
-            <br><br>
-
-            <input type="date" id="startDate">
-            <input type="date" id="endDate">
-            <button onclick="searchByDateRange()">Search by Date Range</button>
+            <!-- Search tools -->
+            <div class="form-card">
+                <div class="sub-h3" style="margin-bottom:1rem;">Search Transactions</div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>By Transaction ID</label>
+                        <input type="text" id="searchTxnId" placeholder="Transaction ID">
+                    </div>
+                    <div style="display:flex;align-items:flex-end;">
+                        <button id="btn-search-by-id" class="btn btn-ghost" onclick="searchById()">🔍 Search ID</button>
+                    </div>
+                    <div class="form-field">
+                        <label>By Amount (₹)</label>
+                        <input type="number" id="searchAmount" placeholder="Amount">
+                    </div>
+                    <div style="display:flex;align-items:flex-end;">
+                        <button id="btn-search-by-amount" class="btn btn-ghost" onclick="searchByAmount()">🔍 Search Amount</button>
+                    </div>
+                    <div class="form-field">
+                        <label>Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-field">
+                        <label>End Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                <button id="btn-search-by-date" class="btn btn-ghost" onclick="searchByDateRange()">🗓️ Search by Date Range</button>
+            </div>
 
             <div id="txnResult"></div>
-
         </div>
 
+        <!-- ─── LOANS ─── -->
         <div id="loans" class="section hidden">
+            <div class="section-header">
+                <h2>🏠 Loans</h2>
+                <p>Apply for instant loans and manage repayments</p>
+            </div>
 
-            <h2>Loans</h2>
+            <div class="form-card">
+                <div class="sub-h3" style="margin-bottom:1rem;">Apply for a Loan</div>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Loan Amount (₹)</label>
+                        <input type="number" id="loanAmount" placeholder="e.g. 100000">
+                    </div>
+                    <div class="form-field">
+                        <label>Down Payment (₹)</label>
+                        <input type="number" id="downPayment" placeholder="e.g. 10000">
+                    </div>
+                    <div class="form-field">
+                        <label>Duration (months)</label>
+                        <input type="number" id="loanMonths" placeholder="e.g. 24">
+                    </div>
+                    <div class="form-field">
+                        <label>Disburse to Account</label>
+                        <select id="loanApplyAccountSelect"></select>
+                    </div>
+                </div>
+                <button id="btn-apply-loan" class="btn btn-primary" onclick="applyLoan()">Apply Now →</button>
+            </div>
 
-            <!-- APPLY LOAN -->
-            <input type="number" id="loanAmount" placeholder="Loan Amount">
-            <input type="number" id="downPayment" placeholder="Down Payment">
-            <input type="number" id="loanMonths" placeholder="Duration (months)">
-
-            <select id="loanApplyAccountSelect"></select>
-
-            <button onclick="applyLoan()">Apply Loan</button>
-
-            <hr>
-
-            <button onclick="loadLoans()">View Loans</button>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Loans</div>
+                <button id="btn-view-loans" class="btn btn-ghost btn-sm" onclick="loadLoans()">↺ Refresh</button>
+            </div>
 
             <div id="loanResult"></div>
 
-            <br><br>
-
-            <!-- PAY LOAN DROPDOWN -->
-            <select id="loanPayAccountSelect"></select>
-
+            <div class="form-card" style="margin-top:1.25rem;">
+                <div class="form-field">
+                    <label>Pay from Account</label>
+                    <select id="loanPayAccountSelect"></select>
+                </div>
+            </div>
         </div>
 
+        <!-- ─── CARDS ─── -->
         <div id="cards" class="section hidden">
-
-            <h2>Cards</h2>
-
-            <button onclick="applyCard('DEBIT')">Apply Debit Card</button>
-            <button onclick="applyCard('CREDIT')">Apply Credit Card</button>
-
-            <hr>
-
-            <button onclick="loadCards()">View Cards</button>
-
-            <div id="cardResult"></div>
-
-        </div>
-
-        <div id="investments" class="section hidden">
-
-            <h2>Investments</h2>
-
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:18px;">
-
-                <div>
-                    <strong>Total Invested:</strong>
-                    <span id="totalInvested">₹0</span>
-                </div>
-
-                <div>
-                    <strong>Profit:</strong>
-                    <span id="totalProfit" style="color:green; font-weight:bold;">+₹0 ↑</span>
-                </div>
-
+            <div class="section-header">
+                <h2>💳 Cards</h2>
+                <p>Apply for debit or credit cards instantly</p>
             </div>
 
+            <div style="display:flex;gap:0.75rem;margin-bottom:1.75rem;">
+                <button id="btn-apply-debit"  class="btn btn-primary" onclick="applyCard('DEBIT')">＋ Apply Debit Card</button>
+                <button id="btn-apply-credit" class="btn btn-ghost"   onclick="applyCard('CREDIT')">＋ Apply Credit Card</button>
+                <button id="btn-view-cards"   class="btn btn-ghost btn-sm" onclick="loadCards()" style="margin-left:auto;">↺ Refresh</button>
+            </div>
 
-
-            <div id="investmentCards" style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;"></div>
-
-            <hr>
-
-            <h3>Your Investments</h3>
-            <div id="invResult"></div>
-
+            <div id="cardResult">
+                <div class="empty-state">
+                    <div class="empty-icon">💳</div>
+                    <p>Click "Refresh" to load your cards</p>
+                </div>
+            </div>
         </div>
 
-    </div>
+        <!-- ─── INVESTMENTS ─── -->
+        <div id="investments" class="section hidden">
+            <div class="section-header">
+                <h2>📈 Investments</h2>
+                <p>Grow your wealth with BNF partner banks</p>
+            </div>
 
+            <!-- Summary -->
+            <div class="invest-summary">
+                <div class="invest-stat">
+                    <div class="invest-stat-label">Total Invested</div>
+                    <div class="invest-stat-value grad-text" id="totalInvested">₹0</div>
+                </div>
+                <div class="invest-stat">
+                    <div class="invest-stat-label">Total Profit</div>
+                    <div class="invest-stat-value" id="totalProfit" style="color: var(--accent-green);">+₹0</div>
+                </div>
+            </div>
+
+            <!-- Bank grid -->
+            <div class="sub-h3">Choose a Bank to Invest</div>
+            <div id="investmentCards" class="invest-grid"></div>
+
+            <div class="divider"></div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Portfolio</div>
+                <button class="btn btn-ghost btn-sm" onclick="loadInvestments()">↺ Refresh</button>
+            </div>
+            <div id="invResult"></div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Invest Modal -->
+<div id="investModal" class="modal hidden">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeInvestModal()">✕</button>
+        <h2 id="investModalTitle">Invest in Bank</h2>
+        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Minimum 1 year lock-in. 12% annual return.</p>
+
+        <div class="form-field" style="margin-bottom:1rem;">
+            <label>Select Account</label>
+            <select id="investAccountSelect"></select>
+        </div>
+        <div class="form-field" style="margin-bottom:1.25rem;">
+            <label>Investment Amount (₹)</label>
+            <input type="number" id="investAmountInput" placeholder="e.g. 25000">
+        </div>
+        <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm Investment →</button>
+    </div>
+</div>
+
+<!-- Loan Pay Modal -->
+<div id="loanPayModal" class="modal hidden">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeLoanPayModal()">✕</button>
+        <h2>Repay Loan</h2>
+        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Enter the amount you'd like to pay towards your loan.</p>
+        <input type="hidden" id="currentLoanId">
+        <div class="form-field" style="margin-bottom:1.25rem;">
+            <label>Repayment Amount (₹)</label>
+            <input type="number" id="loanPayAmount" placeholder="e.g. 5000">
+        </div>
+        <button id="btn-pay-loan-confirm" class="btn-modal-submit" onclick="confirmLoanPay()">Pay Now →</button>
+    </div>
+</div>
+
+<!-- Withdraw Investment Modal -->
+<div id="withdrawInvModal" class="modal hidden">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeWithdrawInvModal()">✕</button>
+        <h2>Withdraw Investment</h2>
+        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Funds will be transferred to your selected account.</p>
+        <input type="hidden" id="currentInvestmentId">
+        <div class="form-field" style="margin-bottom:1.25rem;">
+            <label>Receive to Account</label>
+            <select id="withdrawInvAccountSelect"></select>
+        </div>
+        <button id="btn-withdraw-inv-confirm" class="btn-modal-submit" onclick="confirmWithdrawInv()">Withdraw →</button>
+    </div>
 </div>
 
 <script src="script.js"></script>
