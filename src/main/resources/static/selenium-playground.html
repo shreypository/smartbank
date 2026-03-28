@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugBank — Selenium Playground</title>
+  <meta name="description" content="Selenium WebDriver testing playground — covers all locators, alerts, iframes, windows, actions, waits, tables, dropdowns, file upload, scroll, JS executor, Shadow DOM and broken links.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .pg-wrap{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+    .pg-hero{text-align:center;padding:2.5rem 0 2rem;}
+    .pg-hero h1{font-size:2.2rem;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 .5rem;}
+    .pg-hero p{color:var(--text-muted);font-size:1rem;margin:0;}
+    .lab-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:2rem;}
+    .lab-nav a{padding:.35rem .9rem;border-radius:20px;background:var(--surface-2);color:var(--text-secondary);font-size:.8rem;text-decoration:none;border:1px solid var(--border);transition:.2s;}
+    .lab-nav a:hover{background:var(--accent-indigo);color:#fff;}
+    .lab-section{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:1.75rem;margin-bottom:2rem;}
+    .lab-section h2{font-size:1.1rem;margin:0 0 1.25rem;color:var(--text-primary);display:flex;align-items:center;gap:.6rem;}
+    .lab-section h2 .badge-label{font-size:.65rem;padding:.2rem .55rem;border-radius:20px;background:var(--accent-indigo);color:#fff;font-weight:700;letter-spacing:.5px;}
+    .locator-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;}
+    .locator-card{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:1rem;}
+    .locator-card label{font-size:.72rem;color:var(--text-muted);display:block;margin-bottom:.4rem;font-family:monospace;}
+    .locator-card input,.locator-card select{width:100%;padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:.9rem;box-sizing:border-box;}
+    .alert-row{display:flex;flex-wrap:wrap;gap:.75rem;}
+    .drag-board{display:flex;gap:1.5rem;flex-wrap:wrap;}
+    .drag-zone{min-height:100px;border:2px dashed var(--border);border-radius:12px;padding:1rem;flex:1;min-width:180px;transition:.2s;}
+    .drag-zone.drag-over{border-color:var(--accent-indigo);background:rgba(99,102,241,.08);}
+    .drag-zone h4{font-size:.78rem;color:var(--text-muted);margin:0 0 .75rem;text-transform:uppercase;letter-spacing:.5px;}
+    .drag-item{background:var(--accent-indigo);color:#fff;border-radius:8px;padding:.5rem .9rem;cursor:grab;font-size:.85rem;margin-bottom:.5rem;user-select:none;display:flex;align-items:center;gap:.5rem;}
+    .drag-item:active{cursor:grabbing;opacity:.8;}
+    .hover-box{display:inline-block;padding:.65rem 1.25rem;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;cursor:default;position:relative;}
+    .hover-tooltip{display:none;position:absolute;top:110%;left:50%;transform:translateX(-50%);background:#1e1b4b;color:#c7d2fe;padding:.5rem .9rem;border-radius:8px;font-size:.8rem;white-space:nowrap;z-index:10;border:1px solid #6366f1;}
+    .hover-box:hover .hover-tooltip{display:block;}
+    .context-menu{display:none;position:fixed;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;z-index:999;min-width:160px;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+    .context-menu.visible{display:block;}
+    .context-menu-item{padding:.55rem 1rem;cursor:pointer;font-size:.85rem;color:var(--text-secondary);}
+    .context-menu-item:hover{background:var(--surface-2);color:var(--text-primary);}
+    .wait-demo-box{padding:1rem;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);display:inline-flex;flex-direction:column;gap:.75rem;align-items:flex-start;}
+    .web-table-wrap{overflow-x:auto;border-radius:10px;}
+    .web-table-wrap table{width:100%;border-collapse:collapse;}
+    .web-table-wrap th{background:var(--surface-2);padding:.65rem 1rem;font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;}
+    .web-table-wrap th:hover{color:var(--accent-indigo);}
+    .web-table-wrap td{padding:.6rem 1rem;border-top:1px solid var(--border);font-size:.85rem;color:var(--text-secondary);}
+    .web-table-wrap tr:hover td{background:var(--surface-2);}
+    .table-pager{display:flex;align-items:center;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;}
+    .table-pager button{padding:.3rem .7rem;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:.8rem;cursor:pointer;}
+    .table-pager button.active{background:var(--accent-indigo);color:#fff;border-color:var(--accent-indigo);}
+    .table-pager button:hover:not(.active){background:var(--surface-1);color:var(--text-primary);}
+    .scroll-h-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;padding:1rem;}
+    .scroll-h-inner{display:flex;gap:1rem;width:2000px;}
+    .scroll-card{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;min-width:200px;text-align:center;}
+    .shadow-demo{padding:1rem;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);}
+    .broken-links-list a,.broken-links-list img{display:block;margin:.4rem 0;}
+    .broken-links-list a{color:#60a5fa;font-size:.9rem;}
+    .upload-area{border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:.2s;}
+    .upload-area:hover{border-color:var(--accent-indigo);background:rgba(99,102,241,.04);}
+    .upload-area input{display:none;}
+    #uploadPreview{margin-top:.75rem;max-width:200px;border-radius:8px;display:none;}
+    .dbl-click-counter{font-size:2.5rem;font-weight:800;color:var(--accent-indigo);padding:.5rem 2rem;background:var(--surface-2);border-radius:12px;text-align:center;cursor:default;border:2px solid var(--border);}
+    .iframe-wrap{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+    .iframe-wrap iframe{width:100%;border:none;display:block;}
+    .select-multi{height:120px;}
+    .result-badge{display:inline-block;padding:.25rem .65rem;border-radius:8px;font-size:.8rem;font-weight:600;}
+    .result-badge.ok{background:rgba(74,222,128,.15);color:#4ade80;}
+    .result-badge.err{background:rgba(248,113,113,.15);color:#f87171;}
+    .js-exec-area{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-start;}
+  </style>
+</head>
+<body>
+
+<div class="pg-wrap">
+
+  <!-- Hero -->
+  <div class="pg-hero">
+    <h1>🧪 Selenium Playground</h1>
+    <p>Complete coverage of every Selenium WebDriver concept — locators, alerts, iFrames, windows, actions, waits, tables, and more.</p>
+  </div>
+
+  <!-- Quick Nav -->
+  <nav class="lab-nav" aria-label="Section navigation">
+    <a href="#locators">Locators</a>
+    <a href="#alerts">Alerts</a>
+    <a href="#iframes">iFrames</a>
+    <a href="#windows">Multi-Window</a>
+    <a href="#actions">Actions</a>
+    <a href="#waits">Waits</a>
+    <a href="#tables">Web Table</a>
+    <a href="#dropdowns">Dropdowns</a>
+    <a href="#fileupload">File Upload</a>
+    <a href="#scrolling">Scrolling</a>
+    <a href="#jsexec">JS Executor</a>
+    <a href="#shadowdom">Shadow DOM</a>
+    <a href="#brokenlinks">Broken Links</a>
+    <a href="dashboard.html" style="margin-left:auto;">← Dashboard</a>
+  </nav>
+
+  <!-- ═══════════════════════════════════ 1. LOCATORS ═══ -->
+  <section class="lab-section" id="locators">
+    <h2>🔍 Element Locators <span class="badge-label">SELENIUM</span></h2>
+    <div class="locator-grid">
+      <div class="locator-card">
+        <label>By ID — id="locator-id-input"</label>
+        <input type="text" id="locator-id-input" name="locatorById" placeholder="Locate me by ID">
+      </div>
+      <div class="locator-card">
+        <label>By Name — name="locatorByName"</label>
+        <input type="text" name="locatorByName" id="name-input" placeholder="Locate me by Name">
+      </div>
+      <div class="locator-card">
+        <label>By ClassName — class="locator-classname-field"</label>
+        <input type="text" class="locator-classname-field" id="class-input" placeholder="Locate me by ClassName">
+      </div>
+      <div class="locator-card">
+        <label>By TagName — only &lt;textarea&gt; on page</label>
+        <textarea id="locator-tagname-area" placeholder="Locate me by TagName (textarea)" rows="2" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:.5rem;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+      <div class="locator-card">
+        <label>By CSS Selector — input[data-testid="css-selector-field"]</label>
+        <input type="text" id="css-selector-input" data-testid="css-selector-field" placeholder="Locate me by CSS Selector">
+      </div>
+      <div class="locator-card">
+        <label>By XPath — //input[@placeholder='xpath-target']</label>
+        <input type="text" id="xpath-input" placeholder="xpath-target" name="xpathLocator">
+      </div>
+      <div class="locator-card">
+        <label>By LinkText — exact link text</label>
+        <a id="link-text-exact" href="#locators" class="lab-nav" style="display:inline-block;padding:.4rem .8rem;border-radius:8px;font-size:.85rem;">Open Account Statement</a>
+      </div>
+      <div class="locator-card">
+        <label>By Partial LinkText — partial "Statement"</label>
+        <a id="link-partial-text" href="#locators" class="lab-nav" style="display:inline-block;padding:.4rem .8rem;border-radius:8px;font-size:.85rem;">View My Account Statement PDF</a>
+      </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button id="btn-submit-locators" class="btn btn-primary" onclick="submitLocators()">✅ Submit All Locator Fields</button>
+      <span id="locator-result" class="result-badge" style="display:none;"></span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 2. ALERTS ═══ -->
+  <section class="lab-section" id="alerts">
+    <h2>🔔 Alert Dialogs <span class="badge-label">SELENIUM</span></h2>
+    <div class="alert-row">
+      <button id="btn-simple-alert" class="btn btn-primary" onclick="triggerSimpleAlert()">Simple Alert</button>
+      <button id="btn-confirm-alert" class="btn btn-ghost" onclick="triggerConfirmAlert()">Confirm Alert</button>
+      <button id="btn-prompt-alert" class="btn btn-ghost" onclick="triggerPromptAlert()">Prompt Alert</button>
+    </div>
+    <div id="alert-result" style="margin-top:1rem;font-size:.9rem;color:var(--text-muted);"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 3. iFRAMES ═══ -->
+  <section class="lab-section" id="iframes">
+    <h2>🖼️ iFrame Handling <span class="badge-label">SELENIUM</span></h2>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 1rem;">Outer frame contains a nested inner iframe. Switch frames to interact with each level.</p>
+    <div class="iframe-wrap">
+      <iframe id="outerFrame" src="/test/frame-outer" title="Outer Frame" height="380"></iframe>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 4. WINDOWS / TABS ═══ -->
+  <section class="lab-section" id="windows">
+    <h2>🪟 Multi-Window / Tab Handling <span class="badge-label">SELENIUM</span></h2>
+    <div class="alert-row">
+      <button id="btn-new-tab" class="btn btn-primary" onclick="openNewTab()">Open in New Tab</button>
+      <button id="btn-new-window" class="btn btn-ghost" onclick="openNewWindow()">Open in New Window</button>
+      <a id="link-target-blank" href="selenium-playground.html" target="_blank" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;">target=_blank Link ↗</a>
+    </div>
+    <p id="window-hint" style="color:var(--text-muted);font-size:.82rem;margin-top:.75rem;">Switch to the new window/tab and interact, then switch back.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════ 5. ACTIONS ═══ -->
+  <section class="lab-section" id="actions">
+    <h2>🖱️ Actions Class <span class="badge-label">SELENIUM</span></h2>
+
+    <!-- Drag & Drop -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">Drag items from the left zone into the right drop zone:</div>
+      <div class="drag-board" id="dragBoard">
+        <div class="drag-zone" id="drag-source-zone" ondragover="allowDrop(event)" ondrop="dropHandler(event,'drag-source-zone')">
+          <h4>Source</h4>
+          <div class="drag-item" id="drag-item-transfer" draggable="true" ondragstart="dragStart(event,'drag-item-transfer')">💸 Fund Transfer</div>
+          <div class="drag-item" id="drag-item-loan" draggable="true" ondragstart="dragStart(event,'drag-item-loan')">🏠 Loan Payment</div>
+          <div class="drag-item" id="drag-item-invest" draggable="true" ondragstart="dragStart(event,'drag-item-invest')">📈 Investment</div>
+        </div>
+        <div class="drag-zone" id="drag-target-zone" ondragover="allowDrop(event)" ondrop="dropHandler(event,'drag-target-zone')">
+          <h4>Drop Target</h4>
+        </div>
+      </div>
+      <button id="btn-drag-reset" class="btn btn-ghost btn-sm" style="margin-top:.5rem;" onclick="resetDrag()">↺ Reset</button>
+    </div>
+
+    <!-- Hover -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">Hover over the card to reveal tooltip:</div>
+      <div class="hover-box" id="hover-target">
+        🏦 Hover Over Me
+        <div class="hover-tooltip" id="hover-tooltip">💡 You hovered! BugBank balance: ₹1,00,000</div>
+      </div>
+    </div>
+
+    <!-- Right-click -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">Right-click the area below to open a context menu:</div>
+      <div id="right-click-area" oncontextmenu="showContextMenu(event)"
+        style="padding:1.25rem;background:var(--surface-2);border:1px dashed var(--border);border-radius:10px;text-align:center;cursor:context-menu;color:var(--text-muted);font-size:.9rem;user-select:none;">
+        🖱️ Right-click here
+      </div>
+      <div id="context-menu" class="context-menu">
+        <div class="context-menu-item" id="ctx-copy" onclick="ctxAction('copy')">📋 Copy</div>
+        <div class="context-menu-item" id="ctx-view"onclick="ctxAction('view')">👁️ View Details</div>
+        <div class="context-menu-item" id="ctx-export" onclick="ctxAction('export')">⬇️ Export</div>
+      </div>
+      <div id="context-result" style="margin-top:.5rem;font-size:.85rem;color:var(--text-muted);"></div>
+    </div>
+
+    <!-- Double-click -->
+    <div>
+      <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">Double-click the counter to increment:</div>
+      <div class="dbl-click-counter" id="dbl-click-counter" ondblclick="incrementCounter()">0</div>
+      <div style="font-size:.78rem;color:var(--text-muted);margin-top:.4rem;">Double-clicked: <span id="dbl-click-count">0</span> time(s)</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 6. WAITS ═══ -->
+  <section class="lab-section" id="waits">
+    <h2>⏳ Synchronization / Waits <span class="badge-label">SELENIUM</span></h2>
+    <div class="wait-demo-box">
+      <!-- Explicit Wait -->
+      <div>
+        <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Explicit Wait — element appears after 3 seconds:</div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+          <button id="btn-trigger-explicit" class="btn btn-primary" onclick="triggerExplicitWait()">Trigger Explicit Wait (3s)</button>
+          <span id="explicit-wait-element" style="display:none;" class="result-badge ok">✅ Element Visible!</span>
+        </div>
+      </div>
+      <!-- Fluent Wait -->
+      <div>
+        <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Fluent Wait — polls every 500ms for up to 8s via API:</div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+          <button id="btn-trigger-fluent" class="btn btn-ghost" onclick="triggerFluentWait()">Trigger Fluent Wait (API)</button>
+          <span id="fluent-wait-status" style="font-size:.82rem;color:var(--text-muted);"></span>
+          <span id="fluent-wait-element" style="display:none;" class="result-badge ok">✅ Data Loaded!</span>
+        </div>
+      </div>
+      <!-- Lazy Load -->
+      <div>
+        <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.5rem;">Lazy-Load Image — loads after scroll into view:</div>
+        <img id="lazy-image" data-src="https://picsum.photos/seed/bugbank/400/120" alt="Lazy loaded bank image"
+          src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+          style="width:400px;max-width:100%;height:80px;border-radius:10px;object-fit:cover;background:var(--surface-2);border:1px solid var(--border);">
+        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem;">Image src set: <span id="lazy-load-status">pending</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 7. WEB TABLE ═══ -->
+  <section class="lab-section" id="tables">
+    <h2>📊 Dynamic Web Table <span class="badge-label">SELENIUM</span></h2>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end;">
+      <div class="form-field" style="margin:0;min-width:140px;">
+        <label>Filter Category</label>
+        <select id="table-filter-category" onchange="loadTable(1)" style="padding:.4rem .7rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);">
+          <option value="">All Categories</option>
+          <option>Personal</option><option>Grocery</option><option>Travel</option>
+          <option>Investment</option><option>Loan</option><option>Friend/Family</option>
+          <option>Salary</option><option>EMI</option>
+        </select>
+      </div>
+      <button id="btn-export-csv" class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button id="btn-refresh-table" class="btn btn-ghost btn-sm" onclick="loadTable(currentPage)">↺ Refresh</button>
+      <span id="table-meta" style="font-size:.8rem;color:var(--text-muted);margin-left:auto;"></span>
+    </div>
+    <div class="web-table-wrap">
+      <table id="txn-web-table">
+        <thead>
+          <tr>
+            <th id="th-id" onclick="sortTable('id')">TXN ID ↕</th>
+            <th id="th-type">Type</th>
+            <th id="th-category">Category</th>
+            <th id="th-amount" onclick="sortTable('amount')">Amount ↕</th>
+            <th id="th-date" onclick="sortTable('date')">Date ↕</th>
+            <th id="th-status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="txn-tbody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="table-pager" id="table-pager"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 8. DROPDOWNS ═══ -->
+  <section class="lab-section" id="dropdowns">
+    <h2>📋 Dropdown Handling <span class="badge-label">SELENIUM</span></h2>
+    <div class="locator-grid">
+      <div class="locator-card">
+        <label>Single Select — id="single-select-dropdown"</label>
+        <select id="single-select-dropdown" name="singleSelect" onchange="singleSelectChange()">
+          <option value="">-- Select Account Type --</option>
+          <option value="SAVINGS">Savings Account</option>
+          <option value="CURRENT">Current Account</option>
+          <option value="BUSINESS">Business Account</option>
+          <option value="FIXED">Fixed Deposit</option>
+        </select>
+        <div id="single-select-result" style="font-size:.78rem;color:var(--text-muted);margin-top:.4rem;"></div>
+      </div>
+      <div class="locator-card">
+        <label>Multi Select — id="multi-select-dropdown" (hold Ctrl)</label>
+        <select id="multi-select-dropdown" multiple class="select-multi" name="multiSelect" onchange="multiSelectChange()">
+          <option value="TRANSFER">Fund Transfer</option>
+          <option value="DEPOSIT">Deposit</option>
+          <option value="WITHDRAWAL">Withdrawal</option>
+          <option value="LOAN">Loan Payment</option>
+          <option value="INVESTMENT">Investment</option>
+          <option value="SALARY">Salary Credit</option>
+        </select>
+        <div id="multi-select-result" style="font-size:.78rem;color:var(--text-muted);margin-top:.4rem;"></div>
+      </div>
+      <div class="locator-card">
+        <label>Custom JS Dropdown — id="custom-dropdown-trigger"</label>
+        <div style="position:relative;">
+          <button id="custom-dropdown-trigger" class="btn btn-ghost" style="width:100%;justify-content:space-between;display:flex;" onclick="toggleCustomDropdown()">
+            <span id="custom-dropdown-label">Select Branch</span> ▾
+          </button>
+          <div id="custom-dropdown-menu" style="display:none;position:absolute;top:110%;left:0;right:0;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;z-index:50;overflow:hidden;">
+            <div class="context-menu-item" id="opt-mumbai" onclick="selectCustomOption('Mumbai HQ')">🏙️ Mumbai HQ</div>
+            <div class="context-menu-item" id="opt-delhi" onclick="selectCustomOption('Delhi Branch')">🏛️ Delhi Branch</div>
+            <div class="context-menu-item" id="opt-bangalore" onclick="selectCustomOption('Bangalore Tech Hub')">💻 Bangalore Tech Hub</div>
+            <div class="context-menu-item" id="opt-hyderabad" onclick="selectCustomOption('Hyderabad Centre')">🏢 Hyderabad Centre</div>
+          </div>
+        </div>
+        <div id="custom-dropdown-result" style="font-size:.78rem;color:var(--text-muted);margin-top:.4rem;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 9. FILE UPLOAD ═══ -->
+  <section class="lab-section" id="fileupload">
+    <h2>📁 File Upload <span class="badge-label">SELENIUM</span></h2>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 1rem;">Upload any file — preview shown for images. The hidden &lt;input type="file"&gt; is also present for direct Selenium interaction.</p>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('file-upload-input').click()">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📂</div>
+          <div style="color:var(--text-muted);font-size:.85rem;">Click to browse or drag & drop</div>
+          <div style="color:var(--text-muted);font-size:.75rem;margin-top:.25rem;">Supports images, PDF, DOCX</div>
+        </div>
+        <!-- Visible input (Selenium can interact with this directly) -->
+        <input type="file" id="file-upload-input" name="fileUpload" accept="image/*,.pdf,.docx"
+          style="margin-top:.75rem;display:block;" onchange="handleFileSelect(event)">
+      </div>
+      <div>
+        <img id="uploadPreview" src="" alt="Upload preview">
+        <div id="upload-result" style="font-size:.85rem;color:var(--text-muted);"></div>
+        <button id="btn-submit-upload" class="btn btn-primary" style="margin-top:.75rem;display:none;" onclick="submitUpload()">⬆ Upload to Server</button>
+        <div id="upload-server-result" style="font-size:.85rem;color:var(--text-muted);margin-top:.5rem;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 10. SCROLLING ═══ -->
+  <section class="lab-section" id="scrolling">
+    <h2>📜 Scrolling <span class="badge-label">SELENIUM</span></h2>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;">
+      <button id="btn-scroll-top" class="btn btn-ghost btn-sm" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆ Scroll to Top</button>
+      <button id="btn-scroll-bottom" class="btn btn-ghost btn-sm" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">⬇ Scroll to Bottom</button>
+      <button id="btn-scroll-element" class="btn btn-ghost btn-sm" onclick="document.getElementById('scroll-anchor').scrollIntoView({behavior:'smooth'})">↩ Scroll to Anchor</button>
+    </div>
+    <div style="font-size:.85rem;color:var(--text-muted);margin-bottom:.75rem;">Horizontal scroll (scroll right to see all cards):</div>
+    <div class="scroll-h-wrap" id="horizontal-scroll-container">
+      <div class="scroll-h-inner" id="horizontal-scroll-inner">
+        <div class="scroll-card" id="hscroll-card-1"><div style="font-size:1.5rem;">🏦</div><div>Savings</div><div style="font-size:.75rem;color:var(--text-muted);">₹50,000</div></div>
+        <div class="scroll-card" id="hscroll-card-2"><div style="font-size:1.5rem;">💳</div><div>Current</div><div style="font-size:.75rem;color:var(--text-muted);">₹1,20,000</div></div>
+        <div class="scroll-card" id="hscroll-card-3"><div style="font-size:1.5rem;">📈</div><div>Investment</div><div style="font-size:.75rem;color:var(--text-muted);">₹75,000</div></div>
+        <div class="scroll-card" id="hscroll-card-4"><div style="font-size:1.5rem;">🏠</div><div>Loan</div><div style="font-size:.75rem;color:var(--text-muted);">₹-25,000</div></div>
+        <div class="scroll-card" id="hscroll-card-5"><div style="font-size:1.5rem;">💎</div><div>Business</div><div style="font-size:.75rem;color:var(--text-muted);">₹3,50,000</div></div>
+        <div class="scroll-card" id="hscroll-card-6"><div style="font-size:1.5rem;">🎯</div><div>Fixed Dep.</div><div style="font-size:.75rem;color:var(--text-muted);">₹2,00,000</div></div>
+        <div class="scroll-card" id="hscroll-card-7"><div style="font-size:1.5rem;">🔐</div><div>Safe Box</div><div style="font-size:.75rem;color:var(--text-muted);">₹10,000</div></div>
+        <div class="scroll-card" id="hscroll-card-8"><div style="font-size:1.5rem;">🌐</div><div>Forex</div><div style="font-size:.75rem;color:var(--text-muted);">$500</div></div>
+      </div>
+    </div>
+    <div id="scroll-anchor" style="margin-top:3rem;padding:1rem;background:var(--surface-2);border-radius:10px;text-align:center;border:1px solid var(--border);">
+      ⚓ Scroll Anchor — Element found at bottom of scroll section
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 11. JS EXECUTOR ═══ -->
+  <section class="lab-section" id="jsexec">
+    <h2>⚡ JavaScript Executor <span class="badge-label">SELENIUM</span></h2>
+    <div class="js-exec-area">
+      <button id="btn-js-highlight" class="btn btn-primary" onclick="jsHighlightHeader()">🎨 Highlight Header</button>
+      <button id="btn-js-scroll-bottom" class="btn btn-ghost" onclick="jsScrollBottom()">⬇ JS Scroll to Bottom</button>
+      <button id="btn-js-change-title" class="btn btn-ghost" onclick="jsChangeTitle()">📝 Change Page Title</button>
+      <button id="btn-js-alert" class="btn btn-ghost" onclick="jsFireAlert()">🔔 JS Fire Alert</button>
+      <button id="btn-js-get-value" class="btn btn-ghost" onclick="jsGetValue()">📤 Get Input Value via JS</button>
+    </div>
+    <div id="js-exec-result" style="margin-top:.75rem;font-size:.85rem;color:var(--text-muted);"></div>
+    <input type="text" id="js-target-input" placeholder="JS Executor target input — read/write this" style="margin-top:.75rem;padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);width:100%;box-sizing:border-box;">
+  </section>
+
+  <!-- ═══════════════════════════════════ 12. SHADOW DOM ═══ -->
+  <section class="lab-section" id="shadowdom">
+    <h2>🌑 Shadow DOM <span class="badge-label">SELENIUM</span></h2>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 1rem;">A Web Component with a shadow root. Use <code>driver.executeScript("return document.querySelector('bugbank-widget').shadowRoot")</code> to access elements inside.</p>
+    <div class="shadow-demo">
+      <bugbank-widget id="shadow-host">
+        <!-- shadow root content injected by JS below -->
+      </bugbank-widget>
+    </div>
+    <div style="margin-top:.75rem;font-size:.82rem;color:var(--text-muted);">Shadow root tag: <code>&lt;bugbank-widget&gt;</code> | Inner input id inside shadow: <code>shadow-input</code></div>
+  </section>
+
+  <!-- ═══════════════════════════════════ 13. BROKEN LINKS ═══ -->
+  <section class="lab-section" id="brokenlinks">
+    <h2>🔗 Broken Links / Images Validation <span class="badge-label">SELENIUM</span></h2>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 1rem;">Collect all &lt;a&gt; and &lt;img&gt; elements on this section + the dedicated broken-links page and verify HTTP status codes.</p>
+    <div class="broken-links-list">
+      <div style="font-weight:600;font-size:.85rem;margin-bottom:.5rem;color:var(--text-secondary);">✅ Valid Links</div>
+      <a id="valid-link-1" href="/">BugBank Home</a>
+      <a id="valid-link-2" href="dashboard.html">Dashboard</a>
+      <div style="font-weight:600;font-size:.85rem;margin:.75rem 0 .5rem;color:var(--text-secondary);">❌ Broken Links</div>
+      <a id="broken-link-1" href="/this-does-not-exist-404">Broken Page Link</a>
+      <a id="broken-link-2" href="/another/missing/path">Another Broken Link</a>
+      <div style="font-weight:600;font-size:.85rem;margin:.75rem 0 .5rem;color:var(--text-secondary);">🖼️ Valid Image</div>
+      <img id="valid-img-1" src="https://picsum.photos/seed/bankvalid/120/40" alt="valid image" style="height:40px;border-radius:6px;">
+      <div style="font-weight:600;font-size:.85rem;margin:.75rem 0 .5rem;color:var(--text-secondary);">🖼️ Broken Images</div>
+      <img id="broken-img-1" src="/nonexistent/image.png" alt="broken image 1" style="height:40px;border:1px solid var(--border);">
+      <img id="broken-img-2" src="/assets/missing-logo.jpg" alt="broken image 2" style="height:40px;border:1px solid var(--border);">
+    </div>
+    <div style="margin-top:1rem;">
+      <button id="btn-check-links" class="btn btn-primary" onclick="checkBrokenLinks()">🔍 Validate All Links</button>
+      <button id="btn-open-broken-page" class="btn btn-ghost" onclick="window.open('/test/broken-links','_blank')">Open Broken Links Page ↗</button>
+    </div>
+    <div id="broken-links-result" style="margin-top:.75rem;font-size:.85rem;"></div>
+  </section>
+
+</div><!-- end pg-wrap -->
+
+<!-- Custom Context Menu backdrop close -->
+<div id="page-footer-anchor"></div>
+
+<!-- Custom Element (Shadow DOM) definition -->
+<script>
+class BugbankWidget extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        :host { display: block; }
+        .sw-wrap { background: #1e1b4b; border-radius: 12px; padding: 1.25rem; font-family: sans-serif; color: #e2e8f0; }
+        .sw-title { font-size: .9rem; color: #a5b4fc; margin-bottom: .75rem; font-weight: 700; }
+        input { padding: .45rem .75rem; border-radius: 8px; border: 1px solid #4338ca; background: #312e81; color: #e2e8f0; width: 100%; box-sizing: border-box; margin-bottom: .6rem; font-size: .9rem; }
+        button { padding: .4rem 1rem; background: #6366f1; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: .85rem; }
+        #shadow-result { margin-top: .6rem; font-size: .82rem; color: #4ade80; min-height: 1rem; }
+      </style>
+      <div class="sw-wrap">
+        <div class="sw-title">🌑 Shadow DOM Widget — BugBank</div>
+        <input id="shadow-input" type="text" placeholder="Type inside shadow DOM">
+        <input id="shadow-amount" type="number" placeholder="Shadow amount field">
+        <button id="shadow-btn">Submit (Shadow)</button>
+        <div id="shadow-result"></div>
+      </div>
+    `;
+    shadow.getElementById('shadow-btn').addEventListener('click', () => {
+      const val = shadow.getElementById('shadow-input').value;
+      const amt = shadow.getElementById('shadow-amount').value;
+      shadow.getElementById('shadow-result').innerText = `Submitted: "${val}", Amount: ₹${amt || '0'}`;
+    });
+  }
+}
+customElements.define('bugbank-widget', BugbankWidget);
+</script>
+
+<script>
+// ── LOCATORS ──────────────────────────────────────────────────
+function submitLocators() {
+  const fields = ['locator-id-input','name-input','class-input','locator-tagname-area','css-selector-input','xpath-input'];
+  const filled = fields.filter(id => document.getElementById(id).value.trim().length > 0);
+  const res = document.getElementById('locator-result');
+  res.style.display = 'inline-block';
+  if (filled.length === fields.length) {
+    res.className = 'result-badge ok'; res.innerText = '✅ All fields filled!';
+  } else {
+    res.className = 'result-badge err'; res.innerText = `⚠ ${fields.length - filled.length} field(s) empty`;
+  }
+}
+
+// ── ALERTS ────────────────────────────────────────────────────
+function triggerSimpleAlert() {
+  alert('🏦 BugBank: Your transaction has been processed successfully!');
+  document.getElementById('alert-result').innerText = 'Simple alert dismissed.';
+}
+function triggerConfirmAlert() {
+  const res = confirm('Do you want to proceed with this bank transfer?');
+  document.getElementById('alert-result').innerText = `Confirm result: ${res ? 'OK (Accepted)' : 'Cancel (Rejected)'}`;
+}
+function triggerPromptAlert() {
+  const val = prompt('Enter transaction reference number:','REF-');
+  document.getElementById('alert-result').innerText = val !== null ? `Prompt value: "${val}"` : 'Prompt cancelled.';
+}
+
+// ── WINDOWS ───────────────────────────────────────────────────
+function openNewTab() { window.open('selenium-playground.html', '_blank'); }
+function openNewWindow() { window.open('selenium-playground.html','BugBankPopup','width=900,height=650'); }
+
+// ── DRAG & DROP ───────────────────────────────────────────────
+let draggedId = null;
+function dragStart(e, id) { draggedId = id; e.dataTransfer.effectAllowed = 'move'; }
+function allowDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function dropHandler(e, zoneId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (draggedId) {
+    document.getElementById(zoneId).appendChild(document.getElementById(draggedId));
+    draggedId = null;
+  }
+}
+document.addEventListener('dragend', () => {
+  document.querySelectorAll('.drag-zone').forEach(z => z.classList.remove('drag-over'));
+});
+function resetDrag() {
+  const source = document.getElementById('drag-source-zone');
+  ['drag-item-transfer','drag-item-loan','drag-item-invest'].forEach(id => source.appendChild(document.getElementById(id)));
+  document.getElementById('drag-target-zone').querySelectorAll('.drag-item').forEach(el => {});
+}
+
+// ── CONTEXT MENU ──────────────────────────────────────────────
+function showContextMenu(e) {
+  e.preventDefault();
+  const menu = document.getElementById('context-menu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('visible');
+}
+function ctxAction(action) {
+  document.getElementById('context-menu').classList.remove('visible');
+  document.getElementById('context-result').innerText = `Context action: "${action}" selected`;
+}
+document.addEventListener('click', () => document.getElementById('context-menu').classList.remove('visible'));
+
+// ── DOUBLE CLICK ──────────────────────────────────────────────
+let dblCount = 0;
+function incrementCounter() {
+  dblCount++;
+  document.getElementById('dbl-click-counter').innerText = dblCount;
+  document.getElementById('dbl-click-count').innerText = dblCount;
+}
+
+// ── EXPLICIT WAIT ─────────────────────────────────────────────
+function triggerExplicitWait() {
+  document.getElementById('explicit-wait-element').style.display = 'none';
+  document.getElementById('btn-trigger-explicit').disabled = true;
+  setTimeout(() => {
+    document.getElementById('explicit-wait-element').style.display = 'inline-block';
+    document.getElementById('btn-trigger-explicit').disabled = false;
+  }, 3000);
+}
+
+// ── FLUENT WAIT (polls API) ────────────────────────────────────
+function triggerFluentWait() {
+  const status = document.getElementById('fluent-wait-status');
+  const el = document.getElementById('fluent-wait-element');
+  el.style.display = 'none';
+  status.innerText = 'Polling…';
+  document.getElementById('btn-trigger-fluent').disabled = true;
+  fetch('/test/wait-element?delayMs=4000')
+    .then(r => r.json())
+    .then(d => {
+      status.innerText = '';
+      el.style.display = 'inline-block';
+      document.getElementById('btn-trigger-fluent').disabled = false;
+    })
+    .catch(() => { status.innerText = 'Server error.'; });
+}
+
+// ── LAZY LOAD ─────────────────────────────────────────────────
+const lazyObs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+      img.src = img.dataset.src;
+      document.getElementById('lazy-load-status').innerText = 'loaded ✅';
+      lazyObs.unobserve(img);
+    }
+  });
+});
+lazyObs.observe(document.getElementById('lazy-image'));
+
+// ── WEB TABLE ─────────────────────────────────────────────────
+let currentPage = 1, currentSort = 'date', currentSortDir = 'desc', tableDataCache = [];
+
+function loadTable(page) {
+  currentPage = page;
+  const cat = document.getElementById('table-filter-category').value;
+  const url = `/test/table-data?page=${page}&size=10&category=${encodeURIComponent(cat)}&sortBy=${currentSort}&sortDir=${currentSortDir}`;
+  document.getElementById('txn-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted);">Loading…</td></tr>';
+  fetch(url).then(r => r.json()).then(d => {
+    tableDataCache = d.data;
+    renderTableRows(d.data);
+    renderPager(d.page, d.totalPages, d.total);
+    document.getElementById('table-meta').innerText = `${d.total} records`;
+  }).catch(() => {
+    document.getElementById('txn-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#f87171;">Failed to load</td></tr>';
+  });
+}
+
+function renderTableRows(rows) {
+  const statusColor = { SUCCESS: 'badge-success', PENDING: 'badge-amber', FAILED: 'badge-danger' };
+  const typeColor = t => t.includes('IN') || t.includes('DEPOSIT') ? 'badge-success' : 'badge-danger';
+  document.getElementById('txn-tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td style="font-size:.78rem;color:var(--text-muted);">${r.id}</td>
+      <td><span class="badge ${typeColor(r.type)}">${r.type}</span></td>
+      <td><span class="badge badge-purple">${r.category}</span></td>
+      <td><strong>₹${Number(r.amount).toLocaleString('en-IN')}</strong></td>
+      <td style="font-size:.78rem;">${r.date}</td>
+      <td><span class="badge ${statusColor[r.status]||'badge-info'}">${r.status}</span></td>
+    </tr>`).join('');
+}
+
+function renderPager(page, totalPages, total) {
+  let html = `<button onclick="loadTable(${page-1})" ${page<=1?'disabled':''}>‹ Prev</button>`;
+  for (let p = Math.max(1,page-2); p <= Math.min(totalPages,page+2); p++) {
+    html += `<button class="${p===page?'active':''}" onclick="loadTable(${p})">${p}</button>`;
+  }
+  html += `<button onclick="loadTable(${page+1})" ${page>=totalPages?'disabled':''}>Next ›</button>`;
+  document.getElementById('table-pager').innerHTML = html;
+}
+
+function sortTable(col) {
+  if (currentSort === col) currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+  else { currentSort = col; currentSortDir = 'asc'; }
+  loadTable(1);
+}
+
+function exportCSV() {
+  if (!tableDataCache.length) return;
+  const cols = Object.keys(tableDataCache[0]);
+  const csv = [cols.join(','), ...tableDataCache.map(r => cols.map(c => `"${r[c]}"`).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'bugbank-transactions.csv';
+  a.click();
+}
+
+// ── DROPDOWNS ─────────────────────────────────────────────────
+function singleSelectChange() {
+  const v = document.getElementById('single-select-dropdown').value;
+  document.getElementById('single-select-result').innerText = v ? `Selected: ${v}` : '';
+}
+function multiSelectChange() {
+  const opts = [...document.getElementById('multi-select-dropdown').selectedOptions].map(o=>o.value);
+  document.getElementById('multi-select-result').innerText = `Selected: ${opts.join(', ')||'none'}`;
+}
+function toggleCustomDropdown() {
+  const m = document.getElementById('custom-dropdown-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function selectCustomOption(val) {
+  document.getElementById('custom-dropdown-label').innerText = val;
+  document.getElementById('custom-dropdown-menu').style.display = 'none';
+  document.getElementById('custom-dropdown-result').innerText = `Selected: ${val}`;
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────
+function handleFileSelect(e) {
+  const file = e.target.files[0]; if (!file) return;
+  document.getElementById('upload-result').innerText = `Selected: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  document.getElementById('btn-submit-upload').style.display = 'inline-flex';
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById('uploadPreview');
+      img.src = ev.target.result; img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    document.getElementById('uploadPreview').style.display = 'none';
+  }
+}
+
+function submitUpload() {
+  const input = document.getElementById('file-upload-input');
+  if (!input.files[0]) return;
+  const fd = new FormData(); fd.append('file', input.files[0]);
+  document.getElementById('upload-server-result').innerText = 'Uploading…';
+  fetch('/test/upload', { method:'POST', body:fd })
+    .then(r => r.json())
+    .then(d => { document.getElementById('upload-server-result').innerText = `✅ ${d.message}`; })
+    .catch(() => { document.getElementById('upload-server-result').innerText = '❌ Upload failed'; });
+}
+
+// ── JS EXECUTOR ───────────────────────────────────────────────
+function jsHighlightHeader() {
+  document.querySelector('.pg-hero h1').style.outline = '3px solid #f59e0b';
+  document.getElementById('js-exec-result').innerText = 'JS: Applied outline to h1';
+}
+function jsScrollBottom() {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  document.getElementById('js-exec-result').innerText = 'JS: Scrolled to bottom';
+}
+function jsChangeTitle() {
+  document.title = 'BugBank — JS Executor Test ' + Date.now();
+  document.getElementById('js-exec-result').innerText = 'JS: Page title changed to: ' + document.title;
+}
+function jsFireAlert() {
+  document.getElementById('js-exec-result').innerText = 'JS: Alert fired (replicated via console)';
+  alert('JavaScript Executor: This alert was fired via JS!');
+}
+function jsGetValue() {
+  const val = document.getElementById('js-target-input').value;
+  document.getElementById('js-exec-result').innerText = `JS: Input value = "${val}"`;
+}
+
+// ── BROKEN LINKS CHECK ────────────────────────────────────────
+async function checkBrokenLinks() {
+  const res = document.getElementById('broken-links-result');
+  res.innerText = 'Checking…';
+  const results = [];
+  const links = document.querySelectorAll('#brokenlinks a[id]');
+  for (const link of links) {
+    try {
+      const r = await fetch(link.href, { method: 'HEAD', mode: 'no-cors' });
+      results.push(`${link.id}: reachable`);
+    } catch {
+      results.push(`${link.id}: ${link.href} — connection error/broken`);
+    }
+  }
+  res.innerHTML = results.map(r => `<div style="font-size:.82rem;color:var(--text-secondary);">${r}</div>`).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+loadTable(1);
+</script>
+
+</body>
+</html>

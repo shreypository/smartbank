@@ -85,11 +85,42 @@ public class AccountController {
 
         return transactions.stream().map(t -> {
             Map<String, Object> map = new HashMap<>();
+            map.put("transactionId", t.getTransactionId() != null ? t.getTransactionId() : "");
             map.put("type", t.getType());
+            map.put("category", t.getCategory() != null ? t.getCategory() : "—");
             map.put("amount", t.getAmount());
             map.put("timestamp", t.getTimestamp());
+            if (t.getSender() != null)
+                map.put("from", t.getSender().getAccountNumber());
+            if (t.getReceiver() != null)
+                map.put("to", t.getReceiver().getAccountNumber());
             return map;
         }).collect(Collectors.toList());
+    }
+
+    @GetMapping("/transactions/all")
+    public List<Map<String, Object>> getAllTransactionsForUser(@RequestParam String userCode) {
+
+        List<Account> accounts = accountService.getUserAccounts(userCode);
+
+        return accounts.stream()
+            .flatMap(acc -> accountService.getTransactions(acc.getId()).stream().map(t -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("transactionId", t.getTransactionId() != null ? t.getTransactionId() : "");
+                map.put("type", t.getType());
+                map.put("category", t.getCategory() != null ? t.getCategory() : "—");
+                map.put("amount", t.getAmount());
+                map.put("timestamp", t.getTimestamp() != null ? t.getTimestamp().toString() : "");
+                map.put("accountId", acc.getId());
+                map.put("accountType", acc.getAccountType());
+                if (t.getSender() != null)
+                    map.put("from", t.getSender().getAccountNumber());
+                if (t.getReceiver() != null)
+                    map.put("to", t.getReceiver().getAccountNumber());
+                return map;
+            }))
+            .sorted((a, b) -> b.get("timestamp").toString().compareTo(a.get("timestamp").toString()))
+            .collect(Collectors.toList());
     }
 
     @GetMapping("/transactions/filter")

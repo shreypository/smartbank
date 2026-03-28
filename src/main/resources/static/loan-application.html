@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugBank — Loan Application</title>
+  <meta name="description" content="BugBank complex multi-section loan application with sliders, conditional fields, file uploads, and signature pad.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .la-wrap{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+    .la-hero{text-align:center;padding:2rem 0 1.5rem;}
+    .la-hero h1{font-size:2rem;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 .4rem;}
+    .la-hero p{color:var(--text-muted);font-size:.9rem;margin:0;}
+    .la-card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;}
+    .la-card h2{font-size:1.05rem;margin:0 0 1.5rem;color:var(--text-secondary);display:flex;align-items:center;gap:.5rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);}
+    .la-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+    @media(max-width:600px){.la-grid{grid-template-columns:1fr;}}
+    .la-field{display:flex;flex-direction:column;gap:.35rem;}
+    .la-field label{font-size:.78rem;color:var(--text-muted);font-weight:600;display:flex;align-items:center;gap:.4rem;}
+    .la-field input,.la-field select,.la-field textarea{padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:.9rem;font-family:inherit;transition:.2s;}
+    .la-field input:focus,.la-field select:focus{border-color:var(--accent-indigo);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+    .la-field input.err{border-color:#f87171;} .la-field input.ok{border-color:#4ade80;}
+    .field-err{font-size:.74rem;color:#f87171;display:none;}
+    .tooltip-icon{display:inline-block;width:16px;height:16px;background:var(--accent-indigo);border-radius:50%;text-align:center;font-size:.65rem;color:#fff;cursor:help;line-height:16px;}
+    /* Slider */
+    .slider-wrap{margin-top:.25rem;}
+    .slider-wrap input[type=range]{width:100%;accent-color:var(--accent-indigo);}
+    .slider-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--text-muted);}
+    .slider-val{text-align:center;font-size:1.15rem;font-weight:800;color:var(--accent-indigo);margin-top:.25rem;}
+    /* Multi-select tenure */
+    .tenure-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem;}
+    .tenure-btn{padding:.3rem .75rem;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:.82rem;cursor:pointer;transition:.2s;}
+    .tenure-btn.selected{background:var(--accent-indigo);border-color:var(--accent-indigo);color:#fff;}
+    /* Conditional */
+    .cond-block{display:none;}
+    .cond-block.show{display:block;}
+    /* Sig pad */
+    .sig-wrap{border:2px dashed var(--border);border-radius:10px;overflow:hidden;position:relative;}
+    .sig-wrap canvas{display:block;cursor:crosshair;touch-action:none;}
+    .sig-actions{display:flex;gap:.5rem;margin-top:.5rem;}
+    /* Processing */
+    .processing-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:1rem;}
+    .processing-overlay.show{display:flex;}
+    .processing-spinner{width:56px;height:56px;border:4px solid rgba(99,102,241,.2);border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .result-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1001;align-items:center;justify-content:center;}
+    .result-modal.show{display:flex;}
+    .result-modal-card{background:var(--surface-1);border-radius:20px;padding:2.5rem;max-width:480px;width:90%;text-align:center;}
+    .result-icon{font-size:4rem;margin-bottom:1rem;}
+    .result-title{font-size:1.5rem;font-weight:800;margin-bottom:.5rem;}
+    .result-sub{color:var(--text-muted);font-size:.9rem;margin-bottom:1.5rem;}
+    .emi-display{font-size:1.8rem;font-weight:800;color:var(--accent-indigo);margin:.75rem 0;}
+    .upload-row{display:flex;gap:1rem;flex-wrap:wrap;}
+    .upload-box{flex:1;min-width:200px;border:2px dashed var(--border);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+    .upload-box:hover{border-color:var(--accent-indigo);}
+    .upload-box input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+    .upload-box-icon{font-size:1.75rem;margin-bottom:.4rem;}
+    .upload-box-label{font-size:.8rem;color:var(--text-muted);}
+    .upload-file-name{font-size:.75rem;color:#4ade80;margin-top:.35rem;display:none;}
+  </style>
+</head>
+<body>
+
+<div class="la-wrap">
+  <div class="la-hero">
+    <h1>🏦 Loan Application</h1>
+    <p>Complete the form below to apply for a personal, home, or business loan. &nbsp;<a href="dashboard.html" style="color:var(--accent-indigo);">← Dashboard</a></p>
+  </div>
+
+  <!-- ─── SECTION 1: Personal Info ─── -->
+  <div class="la-card">
+    <h2>👤 Section 1: Personal Information</h2>
+    <div class="la-grid">
+      <div class="la-field">
+        <label for="la-fullname">Full Name *</label>
+        <input type="text" id="la-fullname" name="fullName" placeholder="As per government ID" required oninput="laValidate(this)">
+        <div class="field-err" id="la-err-fullname">Name is required</div>
+      </div>
+      <div class="la-field">
+        <label for="la-dob">Date of Birth *</label>
+        <input type="date" id="la-dob" name="dob" required oninput="laValidate(this);calcAge()">
+        <div class="field-err" id="la-err-dob">You must be at least 21 years old</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem;" id="la-age-label"></div>
+      </div>
+      <div class="la-field">
+        <label for="la-employment">Employment Type *</label>
+        <select id="la-employment" name="employment" onchange="handleEmploymentChange()">
+          <option value="">-- Select --</option>
+          <option value="salaried">Salaried</option>
+          <option value="self-employed">Self-Employed</option>
+          <option value="business">Business Owner</option>
+          <option value="freelance">Freelancer</option>
+        </select>
+      </div>
+      <div class="la-field">
+        <label for="la-mobile">Mobile Number *</label>
+        <input type="tel" id="la-mobile" name="mobile" placeholder="10-digit mobile" pattern="[6-9][0-9]{9}" required oninput="laValidate(this)">
+        <div class="field-err" id="la-err-mobile">Enter valid 10-digit Indian mobile number</div>
+      </div>
+      <!-- Conditional: Salaried -->
+      <div class="la-field cond-block" id="cond-employer">
+        <label for="la-employer">Employer Name</label>
+        <input type="text" id="la-employer" name="employer" placeholder="Company / Organisation name">
+      </div>
+      <!-- Conditional: Self-Employed / Business -->
+      <div class="la-field cond-block" id="cond-gst">
+        <label for="la-gst">GST Number <span class="tooltip-icon" title="15-character GST identification number">?</span></label>
+        <input type="text" id="la-gst" name="gst" placeholder="22AAAAA0000A1Z5" pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$" oninput="laValidate(this)">
+        <div class="field-err" id="la-err-gst">Invalid GST format</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 2: Financial Info ─── -->
+  <div class="la-card">
+    <h2>💰 Section 2: Financial Information</h2>
+    <div class="la-grid">
+      <div class="la-field" style="grid-column:1/-1;">
+        <label>Monthly Income (₹) <span class="tooltip-icon" title="Net take-home salary after deductions">?</span></label>
+        <div class="slider-wrap">
+          <input type="range" id="la-income-slider" name="income" min="10000" max="500000" step="5000" value="50000" oninput="updateSlider('la-income-slider','la-income-val','₹',true)">
+          <div class="slider-labels"><span>₹10,000</span><span>₹5,00,000</span></div>
+          <div class="slider-val" id="la-income-val">₹50,000</div>
+        </div>
+      </div>
+      <div class="la-field">
+        <label for="la-existing-emi">Existing EMIs (₹/month)</label>
+        <input type="number" id="la-existing-emi" name="existingEmi" placeholder="0" min="0" value="0">
+      </div>
+      <div class="la-field">
+        <label for="la-credit-score">Credit Score <span class="tooltip-icon" title="CIBIL score between 300-900. 750+ is ideal.">?</span></label>
+        <select id="la-credit-score" name="creditScore">
+          <option value="excellent">Excellent (750+)</option>
+          <option value="good">Good (650–750)</option>
+          <option value="fair">Fair (550–650)</option>
+          <option value="poor">Poor (below 550)</option>
+        </select>
+      </div>
+      <div class="la-field">
+        <label for="la-bank-account">Salary Account</label>
+        <select id="la-bank-account" name="bankAccount">
+          <option value="">-- Select Account --</option>
+        </select>
+      </div>
+      <div class="la-field">
+        <label for="la-years-employed">Years of Employment</label>
+        <input type="number" id="la-years-employed" name="yearsEmployed" placeholder="e.g. 3" min="0" max="50">
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 3: Loan Details ─── -->
+  <div class="la-card">
+    <h2>🏠 Section 3: Loan Details</h2>
+    <div class="la-grid">
+      <div class="la-field" style="grid-column:1/-1;">
+        <label>Loan Amount (₹)</label>
+        <div class="slider-wrap">
+          <input type="range" id="la-amount-slider" name="loanAmount" min="50000" max="5000000" step="50000" value="500000" oninput="updateSlider('la-amount-slider','la-amount-val','₹',true);calcEMI()">
+          <div class="slider-labels"><span>₹50,000</span><span>₹50,00,000</span></div>
+          <div class="slider-val" id="la-amount-val">₹5,00,000</div>
+        </div>
+      </div>
+      <div class="la-field" style="grid-column:1/-1;">
+        <label>Loan Tenure (select one or more months)</label>
+        <div class="tenure-grid" id="tenure-grid">
+          <button type="button" class="tenure-btn" data-months="12" onclick="selectTenure(this)">12 months</button>
+          <button type="button" class="tenure-btn selected" data-months="24" onclick="selectTenure(this)">24 months</button>
+          <button type="button" class="tenure-btn" data-months="36" onclick="selectTenure(this)">36 months</button>
+          <button type="button" class="tenure-btn" data-months="48" onclick="selectTenure(this)">48 months</button>
+          <button type="button" class="tenure-btn" data-months="60" onclick="selectTenure(this)">60 months</button>
+          <button type="button" class="tenure-btn" data-months="84" onclick="selectTenure(this)">84 months</button>
+          <button type="button" class="tenure-btn" data-months="120" onclick="selectTenure(this)">120 months</button>
+          <button type="button" class="tenure-btn" data-months="180" onclick="selectTenure(this)">180 months</button>
+        </div>
+        <input type="hidden" id="la-tenure" name="tenure" value="24">
+      </div>
+      <div class="la-field">
+        <label for="la-purpose">Loan Purpose</label>
+        <select id="la-purpose" name="purpose">
+          <option value="home">Home Purchase / Renovation</option>
+          <option value="education">Education</option>
+          <option value="vehicle">Vehicle Purchase</option>
+          <option value="medical">Medical Emergency</option>
+          <option value="business_exp">Business Expansion</option>
+          <option value="travel">Travel</option>
+          <option value="personal">Personal Use</option>
+        </select>
+      </div>
+      <div class="la-field">
+        <label>Estimated EMI</label>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--accent-indigo);padding:.45rem 0;" id="emi-display">₹ —</div>
+        <div style="font-size:.75rem;color:var(--text-muted);" id="emi-note"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 4: Documents ─── -->
+  <div class="la-card">
+    <h2>📄 Section 4: Document Upload</h2>
+    <div class="upload-row">
+      <div class="upload-box" id="upload-id-box">
+        <input type="file" id="la-upload-id" name="idProof" accept=".pdf,.jpg,.jpeg,.png" onchange="showUploadName(this,'upload-id-box','upload-id-name')">
+        <div class="upload-box-icon">🪪</div>
+        <div class="upload-box-label">ID Proof<br><small>Aadhar / Passport / Voter ID</small></div>
+        <div class="upload-file-name" id="upload-id-name"></div>
+      </div>
+      <div class="upload-box" id="upload-income-box">
+        <input type="file" id="la-upload-income" name="incomeProof" accept=".pdf,.jpg,.jpeg,.png" onchange="showUploadName(this,'upload-income-box','upload-income-name')">
+        <div class="upload-box-icon">🧾</div>
+        <div class="upload-box-label">Income Proof<br><small>Salary slips / ITR / Bank Statement</small></div>
+        <div class="upload-file-name" id="upload-income-name"></div>
+      </div>
+      <div class="upload-box" id="upload-address-box">
+        <input type="file" id="la-upload-address" name="addressProof" accept=".pdf,.jpg,.jpeg,.png" onchange="showUploadName(this,'upload-address-box','upload-address-name')">
+        <div class="upload-box-icon">🏠</div>
+        <div class="upload-box-label">Address Proof<br><small>Utility bill / Rent agreement</small></div>
+        <div class="upload-file-name" id="upload-address-name"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 5: Declaration + Signature ─── -->
+  <div class="la-card">
+    <h2>✍️ Section 5: Declaration & Signature</h2>
+    <div style="margin-bottom:1.25rem;">
+      <label class="cb-item" style="display:flex;gap:.6rem;align-items:flex-start;font-size:.88rem;cursor:pointer;">
+        <input type="checkbox" id="la-declare-1" name="declaration1" style="margin-top:.15rem;">
+        <span>I declare that all information provided in this application is true, accurate and complete to the best of my knowledge.</span>
+      </label>
+      <label class="cb-item" style="display:flex;gap:.6rem;align-items:flex-start;font-size:.88rem;cursor:pointer;margin-top:.75rem;">
+        <input type="checkbox" id="la-declare-2" name="declaration2" style="margin-top:.15rem;">
+        <span>I authorise BugBank to verify my credit history and contact my employer if required.</span>
+      </label>
+      <label class="cb-item" style="display:flex;gap:.6rem;align-items:flex-start;font-size:.88rem;cursor:pointer;margin-top:.75rem;">
+        <input type="checkbox" id="la-declare-3" name="declaration3" style="margin-top:.15rem;">
+        <span>I agree to the <a href="#" style="color:var(--accent-indigo);">Terms & Conditions</a> and <a href="#" style="color:var(--accent-indigo);">Privacy Policy</a> of BugBank.</span>
+      </label>
+    </div>
+    <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:.6rem;">Draw your signature below:</div>
+    <div class="sig-wrap">
+      <canvas id="signature-canvas" width="760" height="140" style="background:#0a0a15;max-width:100%;"></canvas>
+    </div>
+    <div class="sig-actions">
+      <button type="button" id="btn-clear-sig" class="btn btn-ghost btn-sm" onclick="clearSignature()">✕ Clear Signature</button>
+      <span id="sig-status" style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem;align-self:center;"></span>
+    </div>
+    <div id="la-decl-error" style="color:#f87171;font-size:.82rem;margin-top:.75rem;display:none;"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap;">
+      <button type="button" id="btn-submit-loan" class="btn btn-primary" style="min-width:200px;" onclick="submitLoanApp()">🚀 Submit Application</button>
+      <button type="button" class="btn btn-ghost" onclick="resetLoanForm()">↺ Reset</button>
+    </div>
+  </div>
+
+</div><!-- end la-wrap -->
+
+<!-- Processing Overlay -->
+<div class="processing-overlay" id="processing-overlay">
+  <div class="processing-spinner"></div>
+  <div style="color:#e2e8f0;font-size:1rem;">Processing your application…</div>
+  <div style="color:var(--text-muted);font-size:.82rem;" id="processing-step-text">Validating information…</div>
+</div>
+
+<!-- Result Modal -->
+<div class="result-modal" id="result-modal">
+  <div class="result-modal-card">
+    <div class="result-icon" id="result-icon">🎉</div>
+    <div class="result-title" id="result-title">Application Submitted!</div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="emi-display" id="result-emi" style="display:none;"></div>
+    <div id="result-details" style="background:var(--surface-2);border-radius:10px;padding:1rem;text-align:left;font-size:.85rem;margin-bottom:1.5rem;"></div>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+      <button id="btn-result-close" class="btn btn-primary" onclick="closeResultModal()">Continue</button>
+      <a href="dashboard.html" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;">🏦 Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="script.js"></script>
+<script>
+// Sliders
+function updateSlider(sliderId, valId, prefix, format) {
+  const v = parseInt(document.getElementById(sliderId).value);
+  document.getElementById(valId).innerText = prefix + (format ? v.toLocaleString('en-IN') : v);
+}
+
+// Tenure multi-select (single at a time for simplicity, but allows clicking any)
+let selectedTenure = 24;
+function selectTenure(btn) {
+  document.querySelectorAll('.tenure-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedTenure = parseInt(btn.dataset.months);
+  document.getElementById('la-tenure').value = selectedTenure;
+  calcEMI();
+}
+
+function calcEMI() {
+  const amt = parseInt(document.getElementById('la-amount-slider').value);
+  const months = selectedTenure;
+  const r = 0.09 / 12;
+  const emi = (amt * r * Math.pow(1+r, months)) / (Math.pow(1+r,months)-1);
+  document.getElementById('emi-display').innerText = '₹' + Math.round(emi).toLocaleString('en-IN');
+  document.getElementById('emi-note').innerText = `@ 9% p.a. for ${months} months | Total: ₹${Math.round(emi*months).toLocaleString('en-IN')}`;
+}
+
+// Employment conditional
+function handleEmploymentChange() {
+  const val = document.getElementById('la-employment').value;
+  document.getElementById('cond-employer').classList.toggle('show', val === 'salaried');
+  document.getElementById('cond-gst').classList.toggle('show', val === 'self-employed' || val === 'business');
+}
+
+// Age calc
+function calcAge() {
+  const dob = document.getElementById('la-dob').value;
+  if (!dob) return;
+  const diff = Date.now() - new Date(dob).getTime();
+  const age = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  document.getElementById('la-age-label').innerText = `Age: ${age} years`;
+  const errEl = document.getElementById('la-err-dob');
+  if (age < 21) { errEl.style.display='block'; document.getElementById('la-dob').classList.add('err'); }
+  else { errEl.style.display='none'; document.getElementById('la-dob').classList.remove('err'); document.getElementById('la-dob').classList.add('ok'); }
+}
+
+function laValidate(el) {
+  const errEl = document.getElementById('la-err-' + el.id.replace('la-',''));
+  const valid = el.checkValidity();
+  el.classList.toggle('ok', valid && el.value.length > 0);
+  el.classList.toggle('err', !valid && el.value.length > 0);
+  if (errEl) errEl.style.display = (!valid && el.value.length > 0) ? 'block' : 'none';
+}
+
+function showUploadName(input, boxId, nameId) {
+  const el = document.getElementById(nameId);
+  if (input.files[0]) { el.innerText = '✅ ' + input.files[0].name; el.style.display='block'; }
+}
+
+// Signature Pad
+const canvas = document.getElementById('signature-canvas');
+const ctx = canvas.getContext('2d');
+let drawing = false, hasSig = false;
+ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
+}
+canvas.addEventListener('mousedown', e => { drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+canvas.addEventListener('mousemove', e => { if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; });
+canvas.addEventListener('mouseup', () => { drawing=false; updateSigStatus(); });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; });
+canvas.addEventListener('touchend', () => { drawing=false; updateSigStatus(); });
+
+function updateSigStatus() { document.getElementById('sig-status').innerText = hasSig ? '✅ Signature captured' : ''; }
+function clearSignature() { ctx.clearRect(0,0,canvas.width,canvas.height); hasSig=false; document.getElementById('sig-status').innerText=''; }
+
+// Load accounts
+window.addEventListener('load', () => {
+  calcEMI();
+  document.getElementById('la-dob').max = new Date().toISOString().split('T')[0];
+  const uc = localStorage.getItem('userCode');
+  if (!uc) return;
+  fetch(`/accounts/user?userCode=${uc}`).then(r=>r.json()).then(data => {
+    const sel = document.getElementById('la-bank-account');
+    sel.innerHTML = '<option value="">-- Select Account --</option>' +
+      data.map(a=>`<option value="${a.id}">${a.accountType} — ${a.accountNumber}</option>`).join('');
+  });
+});
+
+function submitLoanApp() {
+  // Validate declarations
+  const d1 = document.getElementById('la-declare-1').checked;
+  const d2 = document.getElementById('la-declare-2').checked;
+  const d3 = document.getElementById('la-declare-3').checked;
+  const errEl = document.getElementById('la-decl-error');
+  if (!d1||!d2||!d3) { errEl.style.display='block'; errEl.innerText='⚠ Please check all declarations before submitting.'; return; }
+  if (!hasSig) { errEl.style.display='block'; errEl.innerText='⚠ Please provide your signature.'; return; }
+  const name = document.getElementById('la-fullname').value;
+  if (!name) { showToast('Please fill in required fields','warning'); return; }
+  errEl.style.display='none';
+
+  const income = parseInt(document.getElementById('la-income-slider').value);
+  const amount = parseInt(document.getElementById('la-amount-slider').value);
+  const months = selectedTenure;
+
+  // Processing animation
+  const overlay = document.getElementById('processing-overlay');
+  overlay.classList.add('show');
+  const steps = ['Validating information…','Checking credit score…','Calculating eligibility…','Finalizing decision…'];
+  let si = 0;
+  const stepTimer = setInterval(() => {
+    document.getElementById('processing-step-text').innerText = steps[Math.min(si++,steps.length-1)];
+  }, 800);
+
+  fetch(`/test/loan-check?income=${income}&amount=${amount}&months=${months}`, {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+      clearInterval(stepTimer);
+      overlay.classList.remove('show');
+      // Show result
+      document.getElementById('result-icon').innerText = d.approved ? '🎉' : '😔';
+      document.getElementById('result-title').innerText = d.approved ? 'Pre-Approved!' : 'Not Approved';
+      document.getElementById('result-title').style.color = d.approved ? '#4ade80' : '#f87171';
+      document.getElementById('result-sub').innerText = d.message;
+      document.getElementById('result-emi').style.display = d.approved ? 'block' : 'none';
+      document.getElementById('result-emi').innerText = `EMI: ₹${Number(d.emi).toLocaleString('en-IN')}/mo`;
+      document.getElementById('result-details').innerHTML = d.approved ? `
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span>Loan Amount</span><strong>₹${Number(amount).toLocaleString('en-IN')}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span>Tenure</span><strong>${months} months</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border);"><span>Interest Rate</span><strong>${d.interestRate}% p.a.</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:.4rem 0;"><span>Total Payable</span><strong>₹${Number(d.totalPayable).toLocaleString('en-IN')}</strong></div>
+      ` : '<div style="color:var(--text-muted);font-size:.85rem;">Please improve your credit score or reduce the requested loan amount and try again.</div>';
+      document.getElementById('result-modal').classList.add('show');
+    })
+    .catch(() => { clearInterval(stepTimer); overlay.classList.remove('show'); showToast('Submission failed. Please try again.','error'); });
+}
+
+function closeResultModal() { document.getElementById('result-modal').classList.remove('show'); }
+
+function resetLoanForm() {
+  document.getElementById('la-amount-slider').value = 500000;
+  document.getElementById('la-income-slider').value = 50000;
+  updateSlider('la-amount-slider','la-amount-val','₹',true);
+  updateSlider('la-income-slider','la-income-val','₹',true);
+  selectedTenure = 24;
+  document.querySelectorAll('.tenure-btn').forEach(b => b.classList.toggle('selected', b.dataset.months==='24'));
+  document.getElementById('la-tenure').value = 24;
+  clearSignature();
+  calcEMI();
+}
+</script>
+</body>
+</html>
