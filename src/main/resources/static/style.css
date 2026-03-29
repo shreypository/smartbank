@@ -1931,3 +1931,24 @@ tbody tr:last-child td { border-bottom: none; }
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.brand-logo {
+  width: 330px;        /* try 80–120px */
+  height: auto;       /* keeps aspect ratio */
+  margin-bottom: 18px;
+}
+
+.brand-logo {
+
+  filter: drop-shadow(0 0 10px #00f0ff)
+  drop-shadow(0 0 20px #7a5cff);
+
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.08);
+}
+.brand-logo {
+  mix-blend-mode: lighten;
+}
