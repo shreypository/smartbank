@@ -1437,6 +1437,12 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--text-primary);
 }
 
+.market-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
 /* ── ENHANCED INVESTMENT PAGE ────────────────────────────────── */
 .invest-summary {
   display: grid;
@@ -1483,47 +1489,62 @@ tbody tr:last-child td { border-bottom: none; }
   margin-bottom: 2rem;
 }
 .bank-invest-card {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1rem;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 1.4rem 1rem;
   text-align: center;
-  transition: var(--transition);
+  cursor: pointer;
   position: relative;
-  overflow: hidden;
-  cursor: default;
-}
-.bank-invest-card:hover {
-  border-color: rgba(99,102,241,0.4);
-  background: var(--bg-card-hover);
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(99,102,241,0.18);
-}
-.bank-invest-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--grad-primary);
-  opacity: 0;
-  transition: var(--transition);
-}
-.bank-invest-card:hover::before { opacity: 1; }
-.bank-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.2rem;
-}
-.bank-rate {
-  font-size: 0.75rem;
-  color: var(--accent-teal);
-  margin-bottom: 0.85rem;
-  font-weight: 500;
+  transition: 0.35s ease;
 }
 
+.bank-invest-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 20px 50px rgba(99,102,241,0.25);
+}
+
+/* glow */
+.bank-invest-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.25), transparent 70%);
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.bank-invest-card:hover::after {
+  opacity: 1;
+}
+
+/* return text */
+.bank-return {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* colors */
+.positive { color: #22c55e; }
+.negative { color: #ef4444; }
+.neutral  { color: #facc15; }
+
+.modal-card {
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+
+
 /* ── MODAL BACKDROP CLOSE ────────────────────────────────────── */
-.modal { cursor: default; }
+.modal {
+  cursor: default;
+  backdrop-filter: blur(6px);
+}
 
 /* ── FORM CARD ───────────────────────────────────────────────── */
 .form-card {
@@ -1904,4 +1925,9 @@ tbody tr:last-child td { border-bottom: none; }
   margin-top: 12px;
   display: flex;
   gap: 10px;
+}
+
+.btn-modal-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
