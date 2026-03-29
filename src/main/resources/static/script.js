@@ -374,10 +374,15 @@ function createAccountUI(type) {
     setLoading(btn, true);
 
     fetch(`/accounts/create?userCode=${userCode}&accountType=${type}`, { method: 'POST' })
-        .then(res => res.text())
+        .then(res => res.json())
         .then(data => {
             setLoading(btn, false);
-            showToast(data, 'success');
+
+            // 🔥 Extract account ID
+            const accountId = data.id || data.accountId;
+
+            showToast(`Account created successfully! ID: ${accountId}`, 'success');
+
             loadAccounts();
             loadATMAccounts();
             loadTransferAccounts();
