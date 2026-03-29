@@ -1216,24 +1216,60 @@ async function loadFDs() {
             : `<button class="btn btn-ghost" disabled>Locked</button>`;
 
         container.innerHTML += `
-            <div class="account-card">
-                <h3>FD #${fd.id}</h3>
+<div class="fd-card">
 
-                <p><b>Account:</b> ${fd.accountId}</p>
-                <p><b>Amount:</b> ₹${fd.amount}</p>
-                <p><b>Interest:</b> ${fd.interestRate}%</p>
-                <p><b>Duration:</b> ${fd.durationMonths} months</p>
-                <p><b>Maturity:</b> ₹${fd.maturityAmount}</p>
-                <p><b>Status:</b> ${fd.status}</p>
+    <div class="fd-header">
+        <h3>FD #${fd.id}</h3>
+        <div class="fd-status ${getStatusClass(fd.status)}">
+            ${fd.status}
+        </div>
+    </div>
 
-                <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button class="btn btn-primary" onclick='viewBond(${JSON.stringify(fd)})'>
-                        View Bond
-                    </button>
-                    ${withdrawBtn}
-                </div>
-            </div>
-        `;
+    <div class="fd-body">
+
+        <div class="fd-row">
+            <span>Account</span>
+            <span>${fd.accountId}</span>
+        </div>
+
+        <div class="fd-row highlight">
+            <span>Amount</span>
+            <span>₹${fd.amount}</span>
+        </div>
+
+        <div class="fd-row">
+            <span>Interest</span>
+            <span>${fd.interestRate}%</span>
+        </div>
+
+        <div class="fd-row">
+            <span>Duration</span>
+            <span>${fd.durationMonths} months</span>
+        </div>
+
+        <div class="fd-row highlight-green">
+            <span>Maturity</span>
+            <span>₹${fd.maturityAmount}</span>
+        </div>
+
+    </div>
+
+   <div class="fd-actions">
+    <button class="btn btn-primary" onclick='viewBond(${JSON.stringify(fd)})'>
+        View Bond
+    </button>
+
+    ${
+            fd.status === "MATURED"
+                ? `<button class="btn btn-success" onclick="withdrawFD(${fd.id})">Withdraw</button>`
+                : fd.status === "CLOSED"
+                    ? `<button class="btn btn-danger" disabled>Closed</button>`
+                    : `<button class="btn btn-ghost" disabled>Locked</button>`
+        }
+</div>
+
+</div>
+`;
     });
 }
 
@@ -1275,22 +1311,75 @@ async function createFDUI() {
 }
 
 function viewBond(fd) {
-    alert(`
-    BUGBANK FD BOND
 
-    Account Code: ${fd.accountCode}
-    Account ID: ${fd.accountId}
+    // 🔥 Status styling
+    const statusClass =
+        fd.status === "MATURED" ? "status-green" :
+            fd.status === "CLOSED" ? "status-red" :
+                "status-yellow";
 
-    Amount: ₹${fd.amount}
-    Interest: ${fd.interestRate}%
-    Duration: ${fd.durationMonths} months
+    const statusIcon =
+        fd.status === "MATURED" ? "🟢" :
+            fd.status === "CLOSED" ? "🔴" :
+                "🟡";
 
-    Start: ${fd.startDate}
-    Maturity: ${fd.maturityDate}
+    const statusHTML = `
+        <span class="status ${statusClass}">
+            ${statusIcon} ${fd.status}
+        </span>
+    `;
 
-    Final Amount: ₹${fd.maturityAmount}
-    Status: ${fd.status}
-    `);
+    // 💎 Bond content
+    const content = `
+        <div class="bond-row">
+            <span>Account Code</span>
+            <span>${fd.accountCode}</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Account ID</span>
+            <span>${fd.accountId}</span>
+        </div>
+
+        <hr>
+
+        <div class="bond-row">
+            <span>Amount</span>
+            <span>₹${fd.amount}</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Interest Rate</span>
+            <span>${fd.interestRate}%</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Duration</span>
+            <span>${fd.durationMonths} months</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Start Date</span>
+            <span>${fd.startDate}</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Maturity Date</span>
+            <span>${fd.maturityDate}</span>
+        </div>
+
+        <div class="bond-highlight">
+            💰 Maturity Amount: ₹${fd.maturityAmount}
+        </div>
+
+        <div class="bond-row" style="margin-top:10px;">
+            <span>Status</span>
+            ${statusHTML}
+        </div>
+    `;
+
+    document.getElementById("bondContent").innerHTML = content;
+    document.getElementById("bondModal").classList.remove("hidden");
 }
 
 async function forceMatureFD() {
@@ -1352,3 +1441,12 @@ async function withdrawFD(fdId) {
     loadFDs();
 }
 
+function closeBond() {
+    document.getElementById("bondModal").classList.add("hidden");
+}
+
+function getStatusClass(status) {
+    if (status === "MATURED") return "status-green";
+    if (status === "CLOSED") return "status-red";
+    return "status-yellow";
+}

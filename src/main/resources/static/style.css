@@ -1586,3 +1586,137 @@ tbody tr:last-child td { border-bottom: none; }
   transform: translateY(-3px);
   box-shadow: 0 0 15px rgba(0,255,150,0.2);
 }
+
+/* ===== MODAL BACKDROP ===== */
+.bond-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* ===== CARD ===== */
+.bond-card {
+  width: 420px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 0 40px rgba(0, 255, 200, 0.2);
+  border: 1px solid rgba(0,255,200,0.2);
+}
+
+/* ===== HEADER ===== */
+.bond-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+}
+
+.bond-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.bond-header p {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* ===== CONTENT ===== */
+.bond-content {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.bond-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+/* ===== HIGHLIGHT ===== */
+.bond-highlight {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0,255,200,0.1);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ===== FOOTER ===== */
+.bond-footer {
+  margin-top: 15px;
+  text-align: center;
+}
+
+/* ===== HIDDEN ===== */
+.hidden {
+  display: none;
+}
+
+/* ===== FD CARD ===== */
+.fd-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 15px;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 0 20px rgba(0,255,200,0.08);
+  transition: 0.3s;
+}
+
+.fd-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px rgba(0,255,200,0.2);
+}
+
+/* HEADER */
+.fd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.fd-header h3 {
+  margin: 0;
+}
+
+/* BODY */
+.fd-body {
+  font-size: 14px;
+}
+
+/* ROW */
+.fd-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+/* HIGHLIGHTS */
+.highlight span:last-child {
+  font-weight: bold;
+  color: #60a5fa;
+}
+
+.highlight-green span:last-child {
+  font-weight: bold;
+  color: #22c55e;
+}
+
+/* ACTIONS */
+.fd-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
