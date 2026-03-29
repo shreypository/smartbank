@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank - Cucumber Account Wizard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="landing-bg"></div>
+    <div class="landing-container" style="max-width: 600px; margin: 80px auto;">
+        
+        <div class="form-card" id="step-1">
+            <h2>Step 1: Personal Info</h2>
+            <p class="form-sub">Cucumber Hooks & Background Testing</p>
+            <div class="form-field"><label>First Name</label><input type="text" id="firstName"></div>
+            <div class="form-field"><label>Last Name</label><input type="text" id="lastName"></div>
+            <button id="btn-next-1" class="btn btn-primary" onclick="nextStep(2)">Next →</button>
+        </div>
+        
+        <div class="form-card hidden" id="step-2">
+            <h2>Step 2: Address Info</h2>
+            <div class="form-field"><label>Street</label><input type="text" id="street"></div>
+            <div class="form-field"><label>City</label><input type="text" id="city"></div>
+            <div class="form-field"><label>Zip Code</label><input type="text" id="zip"></div>
+            <div style="display:flex; justify-content:space-between;">
+                <button id="btn-prev-2" class="btn btn-ghost" onclick="nextStep(1)">← Back</button>
+                <button id="btn-next-2" class="btn btn-primary" onclick="nextStep(3)">Next →</button>
+            </div>
+        </div>
+        
+        <div class="form-card hidden" id="step-3">
+            <h2>Step 3: Security Setup</h2>
+            <div class="form-field"><label>PIN</label><input type="password" id="pin"></div>
+            <div style="display:flex; justify-content:space-between;">
+                <button id="btn-prev-3" class="btn btn-ghost" onclick="nextStep(2)">← Back</button>
+                <button id="btn-submit-wizard" class="btn btn-success" onclick="completeWizard()">Complete Account</button>
+            </div>
+        </div>
+        
+        <div id="wizard-result" style="margin-top:20px; text-align:center; font-size:1.2rem; font-weight:bold;"></div>
+    </div>
+    
+    <script>
+        function nextStep(step) {
+            document.querySelectorAll('.form-card').forEach(el => el.classList.add('hidden'));
+            document.getElementById('step-' + step).classList.remove('hidden');
+        }
+        
+        function completeWizard() {
+            const resultBox = document.getElementById("wizard-result");
+            const first = document.getElementById("firstName").value;
+            const last = document.getElementById("lastName").value;
+            
+            if(!first || !last) {
+                resultBox.innerText = "Error: Missing required fields in step 1";
+                resultBox.style.color = "var(--danger)";
+                return;
+            }
+            
+            resultBox.innerText = `Account Created Successfully for ${first} ${last}!`;
+            resultBox.style.color = "var(--success)";
+        }
+    </script>
+</body>
+</html>
