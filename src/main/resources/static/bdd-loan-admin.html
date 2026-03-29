@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank - Cucumber Role-based Flow</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden { display: none !important; }
+        .loan-item { padding: 1rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);}
+    </style>
+</head>
+<body>
+    <div class="landing-bg"></div>
+    <div class="landing-container" style="max-width: 800px; margin: 50px auto;">
+        
+        <!-- Auth Wall -->
+        <div id="auth-wall" class="form-card">
+            <h2>Admin Gateway</h2>
+            <p class="form-sub">Test Bed for Scenario Role-Based Context</p>
+            <div class="form-field"><label>Role</label>
+                <select id="user-role">
+                    <option value="USER">Standard User</option>
+                    <option value="ADMIN">Admin Agent</option>
+                </select>
+            </div>
+            <button id="btn-enter" class="btn btn-primary" onclick="enterDashboard()" style="width: 100%;">Enter Portal</button>
+            <div id="auth-error" style="color:var(--danger); margin-top:1rem; display:none; text-align:center;">Access Denied. Admin privileges required.</div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div id="admin-dashboard" class="form-card hidden">
+            <h2>Loan Approval Queue</h2>
+            
+            <div class="loan-item" id="loan-101">
+                <div>
+                    <div><strong>Customer ID:</strong> 4492</div>
+                    <div style="color:var(--text-muted);">Amount: ₹500,000</div>
+                </div>
+                <div style="display:flex; gap: 0.5rem;">
+                    <button class="btn btn-success btn-approve-loan" onclick="processLoan('101', 'Approved')">Approve</button>
+                    <button class="btn btn-danger btn-reject-loan" onclick="processLoan('101', 'Rejected')">Reject</button>
+                </div>
+            </div>
+            
+            <div class="loan-item" id="loan-102">
+                <div>
+                    <div><strong>Customer ID:</strong> 8831</div>
+                    <div style="color:var(--text-muted);">Amount: ₹25,000</div>
+                </div>
+                <div style="display:flex; gap: 0.5rem;">
+                    <button class="btn btn-success btn-approve-loan" onclick="processLoan('102', 'Approved')">Approve</button>
+                    <button class="btn btn-danger btn-reject-loan" onclick="processLoan('102', 'Rejected')">Reject</button>
+                </div>
+            </div>
+            
+            <div id="action-message" style="margin-top:1rem; font-weight:bold; text-align:center;"></div>
+        </div>
+        
+    </div>
+    
+    <script>
+        function enterDashboard() {
+            const role = document.getElementById("user-role").value;
+            if(role !== "ADMIN") {
+                document.getElementById("auth-error").style.display = "block";
+            } else {
+                document.getElementById("auth-error").style.display = "none";
+                document.getElementById("auth-wall").classList.add("hidden");
+                document.getElementById("admin-dashboard").classList.remove("hidden");
+            }
+        }
+        
+        function processLoan(id, status) {
+            document.getElementById(`loan-${id}`).innerHTML = `
+                <div style="font-weight:bold; color: ${status === 'Approved' ? 'var(--success)' : 'var(--danger)'}">Loan ID ${id} - ${status}</div>
+            `;
+            document.getElementById("action-message").innerText = `Successfully recorded decision for Loan ${id}`;
+            document.getElementById("action-message").style.color = "var(--success)";
+        }
+    </script>
+</body>
+</html>

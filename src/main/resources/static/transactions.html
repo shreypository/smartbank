@@ -173,7 +173,7 @@ function applyFilters() {
 }
 
 function updateStats() {
-  const credits = filteredData.filter(r => r.type.includes('IN') || r.type.includes('DEPOSIT') || r.type.includes('DISBURSEMENT'));
+  const credits = filteredData.filter(r => (r.type.includes('IN') && r.type !== 'INVESTMENT') || r.type.includes('DEPOSIT') || r.type.includes('DISBURSEMENT') || r.type.includes('RETURN'));
   const debits = filteredData.filter(r => r.type.includes('OUT') || r.type.includes('WITHDRAWAL') || r.type.includes('PAYMENT') || r.type === 'INVESTMENT');
   const avg = filteredData.length ? filteredData.reduce((s,r) => s + r.amount, 0) / filteredData.length : 0;
   document.getElementById('stat-total').innerText = filteredData.length;
@@ -190,7 +190,7 @@ function renderPage(page) {
   const from = (page - 1) * size;
   const rows = filteredData.slice(from, from + size);
   const statusClr = { SUCCESS: 'badge-success', PENDING: 'badge-amber', FAILED: 'badge-danger' };
-  const isCredit = t => t.includes('IN') || t.includes('DEPOSIT') || t.includes('DISBURSEMENT');
+  const isCredit = t => (t.includes('IN') && t !== 'INVESTMENT') || t.includes('DEPOSIT') || t.includes('DISBURSEMENT') || t.includes('RETURN');
 
   document.getElementById('table-body').innerHTML = rows.length ? rows.map(r => `
     <tr>

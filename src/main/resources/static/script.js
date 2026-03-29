@@ -408,7 +408,7 @@ function viewTransactions(accountId) {
                         <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
                         <tbody>
                             ${last10.map(t => {
-                const isCredit = t.type.includes('DEPOSIT') || t.type.includes('IN') || t.type.includes('DISBURSEMENT');
+                const isCredit = t.type.includes('DEPOSIT') || (t.type.includes('IN') && t.type !== 'INVESTMENT') || t.type.includes('DISBURSEMENT') || t.type.includes('RETURN');
                 return `<tr>
                                     <td>${t.type}</td>
                                     <td><span class="${isCredit ? 'badge badge-success' : 'badge badge-danger'}">${isCredit ? '+' : '-'}₹${t.amount}</span></td>
@@ -588,7 +588,7 @@ function loadLast15Transactions() {
                         <thead><tr><th>ID</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
                         <tbody>
             ${last15.map(t => {
-                const isCredit = t.type.includes('IN') || t.type.includes('DEPOSIT') || t.type.includes('DISBURSEMENT');
+                const isCredit = (t.type.includes('IN') && t.type !== 'INVESTMENT') || t.type.includes('DEPOSIT') || t.type.includes('DISBURSEMENT') || t.type.includes('RETURN');
                 return `<tr>
                                     <td style="font-size:0.78rem;color:var(--text-muted);">${t.transactionId}</td>
                                     <td>${t.type}</td>

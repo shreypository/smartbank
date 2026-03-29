@@ -609,7 +609,7 @@ function loadTable(page) {
 
 function renderTableRows(rows) {
   const statusColor = { SUCCESS: 'badge-success', PENDING: 'badge-amber', FAILED: 'badge-danger' };
-  const typeColor = t => t.includes('IN') || t.includes('DEPOSIT') ? 'badge-success' : 'badge-danger';
+  const typeColor = t => (t.includes('IN') && t !== 'INVESTMENT') || t.includes('DEPOSIT') || t.includes('RETURN') ? 'badge-success' : 'badge-danger';
   document.getElementById('txn-tbody').innerHTML = rows.map(r => `
     <tr>
       <td style="font-size:.78rem;color:var(--text-muted);">${r.id}</td>
