@@ -66,6 +66,7 @@ function login() {
     const msgEl = document.getElementById('message');
     const btn = document.getElementById('btn-login-submit');
 
+
     if (!email || !password) {
         msgEl.innerText = '⚠️ Please fill in all fields.';
         return;
@@ -84,6 +85,7 @@ function login() {
             setLoading(btn, false);
             if (data.userCode) {
                 localStorage.setItem('userCode', data.userCode);
+                localStorage.setItem("accountCode", data.userCode);
                 window.location.href = 'dashboard.html';
             } else {
                 msgEl.innerText = '❌ Invalid email or password. Please try again.';
@@ -252,6 +254,8 @@ window.onload = function () {
         loadLoanAccounts();
         loadInvestmentCards();
         loadInvestments();
+        loadFDAccounts();
+        loadFDs();
     }
 };
 
@@ -269,6 +273,7 @@ const sectionTitles = {
 };
 
 function showSection(sectionId) {
+
     // Hide all sections
     document.querySelectorAll('.section').forEach(sec => sec.classList.add('hidden'));
     document.getElementById(sectionId).classList.remove('hidden');
@@ -281,6 +286,13 @@ function showSection(sectionId) {
     // Update navbar title
     const titleEl = document.getElementById('navbarSectionTitle');
     if (titleEl) titleEl.innerText = sectionTitles[sectionId] || '';
+
+    // 🔥 FIXED PART
+    if (sectionId === "fd") {
+        console.log("FD section opened");
+        loadFDAccounts();
+        loadFDs();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1157,3 +1169,186 @@ function showLoader(id) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<div class="loader"></div>';
 }
+
+async function loadFDAccounts() {
+    try {
+        const accountCode = localStorage.getItem("accountCode");
+
+        console.log("AccountCode:", accountCode);
+
+        const res = await fetch(`/accounts/user?userCode=${accountCode}`);
+
+        const accounts = await res.json();
+
+        console.log("Accounts:", accounts);
+
+        const select = document.getElementById("fdAccountSelect");
+
+        // 🔥 CLEAR FIRST
+        select.innerHTML = '<option value="">Select Account</option>';
+
+        accounts.forEach(acc => {
+            select.innerHTML += `
+                <option value="${acc.id}">
+                    ID: ${acc.id} | ${acc.accountType} | ₹${Math.round(acc.balance)}
+                </option>
+            `;
+        });
+
+    } catch (err) {
+        console.error("Error loading accounts:", err);
+    }
+}
+
+async function loadFDs() {
+    const accountCode = localStorage.getItem("accountCode");
+
+    const res = await fetch(`/fd/account/${accountCode}`);
+    const data = await res.json();
+
+    const container = document.getElementById("fdList");
+    container.innerHTML = "";
+
+    data.forEach(fd => {
+
+        const withdrawBtn = fd.status === "MATURED"
+            ? `<button class="btn btn-success" onclick="withdrawFD(${fd.id})">Withdraw</button>`
+            : `<button class="btn btn-ghost" disabled>Locked</button>`;
+
+        container.innerHTML += `
+            <div class="account-card">
+                <h3>FD #${fd.id}</h3>
+
+                <p><b>Account:</b> ${fd.accountId}</p>
+                <p><b>Amount:</b> ₹${fd.amount}</p>
+                <p><b>Interest:</b> ${fd.interestRate}%</p>
+                <p><b>Duration:</b> ${fd.durationMonths} months</p>
+                <p><b>Maturity:</b> ₹${fd.maturityAmount}</p>
+                <p><b>Status:</b> ${fd.status}</p>
+
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button class="btn btn-primary" onclick='viewBond(${JSON.stringify(fd)})'>
+                        View Bond
+                    </button>
+                    ${withdrawBtn}
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function createFDUI() {
+    try {
+        const accountCode = localStorage.getItem("accountCode");
+        const accountId = document.getElementById("fdAccountSelect").value;
+        const amount = document.getElementById("fdAmount").value;
+        const months = document.getElementById("fdMonths").value;
+
+        if (!accountCode || !accountId || !amount || !months) {
+            alert("Fill all fields");
+            return;
+        }
+
+        const res = await fetch(`/fd/create`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                accountCode,
+                accountId: Number(accountId),
+                amount: Number(amount),
+                months: Number(months)
+            })
+        });
+
+        const data = await res.json();
+
+        document.getElementById("fdResult").innerText =
+            "FD Created! ID: " + data.id;
+
+        loadFDs();
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function viewBond(fd) {
+    alert(`
+    BUGBANK FD BOND
+
+    Account Code: ${fd.accountCode}
+    Account ID: ${fd.accountId}
+
+    Amount: ₹${fd.amount}
+    Interest: ${fd.interestRate}%
+    Duration: ${fd.durationMonths} months
+
+    Start: ${fd.startDate}
+    Maturity: ${fd.maturityDate}
+
+    Final Amount: ₹${fd.maturityAmount}
+    Status: ${fd.status}
+    `);
+}
+
+async function forceMatureFD() {
+    const fdId = document.getElementById("adminFdId").value;
+
+    if (!fdId) {
+        alert("Enter FD ID");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/fd/admin/mature/${fdId}`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        document.getElementById("adminResult").innerHTML =
+            `<div class="account-card">✅ FD ${data.id} matured successfully</div>`;
+
+    } catch (err) {
+        console.error(err);
+        alert("Error maturing FD");
+    }
+}
+
+async function loadAllFDs() {
+    try {
+        const res = await fetch(`/fd/all`) // or create separate API
+        const data = await res.json();
+
+        const container = document.getElementById("adminResult");
+        container.innerHTML = "";
+
+        data.forEach(fd => {
+            container.innerHTML += `
+                <div class="account-card">
+                    <p><b>FD ID:</b> ${fd.id}</p>
+                    <p><b>Account:</b> ${fd.accountId}</p>
+                    <p><b>Amount:</b> ₹${fd.amount}</p>
+                    <p><b>Status:</b> ${fd.status}</p>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function withdrawFD(fdId) {
+    const res = await fetch(`/fd/withdraw/${fdId}`, {
+        method: "POST"
+    });
+
+    const data = await res.text();
+    alert("Withdrawn ₹" + data);
+
+    loadFDs();
+}
+
