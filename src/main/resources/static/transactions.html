@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugBank — Transaction History</title>
+  <meta name="description" content="BugBank dynamic paginated transaction table with sorting, filtering, CSV export, and auto-refresh.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .txh-wrap{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+    .txh-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;}
+    .txh-header h1{font-size:1.75rem;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0;}
+    .filter-bar{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;}
+    .filter-bar .form-field{margin:0;min-width:140px;}
+    .filter-bar label{font-size:.75rem;color:var(--text-muted);display:block;margin-bottom:.3rem;font-weight:600;}
+    .filter-bar select,.filter-bar input{padding:.45rem .7rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:.85rem;width:100%;}
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;}
+    .stat-card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;}
+    .stat-card-label{font-size:.72rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+    .stat-card-value{font-size:1.3rem;font-weight:800;color:var(--text-primary);margin-top:.25rem;}
+    .tbl-wrap{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+    .tbl-toolbar{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+    .tbl-toolbar span{font-size:.85rem;color:var(--text-muted);}
+    .auto-refresh-toggle{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text-muted);cursor:pointer;}
+    .toggle-sw{width:36px;height:20px;background:var(--surface-2);border-radius:10px;position:relative;cursor:pointer;border:1px solid var(--border);transition:.2s;}
+    .toggle-sw.on{background:var(--accent-indigo);}
+    .toggle-sw::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.2s;}
+    .toggle-sw.on::after{left:18px;}
+    table.txh-table{width:100%;border-collapse:collapse;}
+    table.txh-table thead th{background:var(--surface-2);padding:.7rem 1rem;font-size:.74rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;white-space:nowrap;}
+    table.txh-table thead th:hover{color:var(--accent-indigo);}
+    table.txh-table thead th.sort-asc::after{content:' ↑';}
+    table.txh-table thead th.sort-desc::after{content:' ↓';}
+    table.txh-table td{padding:.65rem 1rem;border-top:1px solid var(--border);font-size:.85rem;color:var(--text-secondary);vertical-align:middle;}
+    table.txh-table tr:hover td{background:var(--surface-2);}
+    .pager{display:flex;align-items:center;gap:.4rem;padding:1rem 1.25rem;flex-wrap:wrap;}
+    .pager button{padding:.3rem .65rem;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);font-size:.8rem;cursor:pointer;min-width:32px;}
+    .pager button:disabled{opacity:.4;cursor:not-allowed;}
+    .pager button.active{background:var(--accent-indigo);color:#fff;border-color:var(--accent-indigo);}
+    .pager button:hover:not(.active):not(:disabled){background:var(--surface-1);color:var(--text-primary);}
+    .pager-info{font-size:.8rem;color:var(--text-muted);margin-left:auto;}
+    .amount-cell-pos{color:#4ade80;font-weight:700;}
+    .amount-cell-neg{color:#f87171;font-weight:700;}
+  </style>
+</head>
+<body>
+
+<div class="txh-wrap">
+
+  <!-- Header -->
+  <div class="txh-header">
+    <h1>📋 Transaction History</h1>
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <a href="dashboard.html" class="btn btn-ghost btn-sm" style="text-decoration:none;">← Dashboard</a>
+      <button id="btn-export-csv" class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-card-label">Total Records</div><div class="stat-card-value" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="stat-card-label">Credits</div><div class="stat-card-value" id="stat-credits" style="color:#4ade80;">—</div></div>
+    <div class="stat-card"><div class="stat-card-label">Debits</div><div class="stat-card-value" id="stat-debits" style="color:#f87171;">—</div></div>
+    <div class="stat-card"><div class="stat-card-label">Avg Amount</div><div class="stat-card-value" id="stat-avg">—</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="form-field">
+      <label>Category</label>
+      <select id="filter-category" onchange="applyFilters()">
+        <option value="">All</option>
+        <option>Personal</option><option>Grocery</option><option>Travel</option>
+        <option>Investment</option><option>Loan</option><option>Friend/Family</option>
+        <option>Salary</option><option>EMI</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Min Amount (₹)</label>
+      <input type="number" id="filter-min-amount" placeholder="0" onchange="applyFilters()">
+    </div>
+    <div class="form-field">
+      <label>Max Amount (₹)</label>
+      <input type="number" id="filter-max-amount" placeholder="50000" onchange="applyFilters()">
+    </div>
+    <div class="form-field">
+      <label>Status</label>
+      <select id="filter-status" onchange="applyFilters()">
+        <option value="">All</option>
+        <option>SUCCESS</option><option>PENDING</option><option>FAILED</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Search Ref</label>
+      <input type="text" id="filter-search" placeholder="TXN or REF..." oninput="applyFilters()">
+    </div>
+    <button id="btn-clear-filters" class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl-wrap">
+    <div class="tbl-toolbar">
+      <span id="toolbar-info">Loading…</span>
+      <div class="auto-refresh-toggle" onclick="toggleAutoRefresh()">
+        <div class="toggle-sw" id="auto-refresh-toggle"></div>
+        <span>Auto-refresh (30s)</span>
+        <span id="refresh-countdown"></span>
+      </div>
+      <button id="btn-refresh-manual" class="btn btn-ghost btn-sm" onclick="loadData(currentPage)" style="margin-left:auto;">↺ Refresh</button>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="txh-table" id="main-table">
+        <thead>
+          <tr>
+            <th id="th-id" onclick="sortBy('id')">TXN ID</th>
+            <th id="th-type">Type</th>
+            <th id="th-cat" onclick="sortBy('category')">Category</th>
+            <th id="th-amount" onclick="sortBy('amount')">Amount</th>
+            <th id="th-date" onclick="sortBy('date')">Date</th>
+            <th id="th-ref">Reference</th>
+            <th id="th-status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager" id="pager">
+      <span class="pager-info" id="pager-info"></span>
+    </div>
+  </div>
+
+</div><!-- end txh-wrap -->
+<div id="toast-container"></div>
+<script src="script.js"></script>
+<script>
+let currentPage = 1, currentSort = 'date', currentSortDir = 'desc';
+let allData = [], filteredData = [], autoRefreshTimer = null, autoRefreshEnabled = false, countdown = 30;
+
+function loadData(page) {
+  currentPage = page;
+  document.getElementById('table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading…</td></tr>';
+  const cat = document.getElementById('filter-category').value;
+  fetch(`/test/table-data?page=1&size=80&category=${encodeURIComponent(cat)}&sortBy=${currentSort}&sortDir=${currentSortDir}`)
+    .then(r => r.json())
+    .then(d => {
+      allData = d.data;
+      applyFilters();
+    })
+    .catch(() => {
+      document.getElementById('table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#f87171;padding:2rem;">Failed to load. Is the server running?</td></tr>';
+    });
+}
+
+function applyFilters() {
+  const min = parseFloat(document.getElementById('filter-min-amount').value) || 0;
+  const max = parseFloat(document.getElementById('filter-max-amount').value) || Infinity;
+  const status = document.getElementById('filter-status').value;
+  const search = document.getElementById('filter-search').value.toLowerCase();
+
+  filteredData = allData.filter(r => {
+    const amt = parseFloat(r.amount);
+    return amt >= min && amt <= max
+      && (!status || r.status === status)
+      && (!search || r.id.toLowerCase().includes(search) || (r.ref||'').toLowerCase().includes(search));
+  });
+
+  updateStats();
+  renderPage(1);
+}
+
+function updateStats() {
+  const credits = filteredData.filter(r => r.type.includes('IN') || r.type.includes('DEPOSIT'));
+  const debits = filteredData.filter(r => r.type.includes('OUT') || r.type.includes('WITHDRAWAL'));
+  const avg = filteredData.length ? filteredData.reduce((s,r) => s + r.amount, 0) / filteredData.length : 0;
+  document.getElementById('stat-total').innerText = filteredData.length;
+  document.getElementById('stat-credits').innerText = credits.length;
+  document.getElementById('stat-debits').innerText = debits.length;
+  document.getElementById('stat-avg').innerText = '₹' + Math.round(avg).toLocaleString('en-IN');
+  document.getElementById('toolbar-info').innerText = `${filteredData.length} records`;
+}
+
+function renderPage(page) {
+  currentPage = page;
+  const size = 10;
+  const total = filteredData.length;
+  const from = (page - 1) * size;
+  const rows = filteredData.slice(from, from + size);
+  const statusClr = { SUCCESS: 'badge-success', PENDING: 'badge-amber', FAILED: 'badge-danger' };
+  const isCredit = t => t.includes('IN') || t.includes('DEPOSIT');
+
+  document.getElementById('table-body').innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td style="font-family:monospace;font-size:.78rem;">${r.id}</td>
+      <td><span class="badge ${isCredit(r.type)?'badge-success':'badge-danger'}">${r.type}</span></td>
+      <td><span class="badge badge-purple">${r.category}</span></td>
+      <td class="${isCredit(r.type)?'amount-cell-pos':'amount-cell-neg'}">
+        ${isCredit(r.type)?'+':'-'}₹${Number(r.amount).toLocaleString('en-IN')}
+      </td>
+      <td style="font-size:.78rem;">${r.date}</td>
+      <td style="font-family:monospace;font-size:.75rem;color:var(--text-muted);">${r.ref}</td>
+      <td><span class="badge ${statusClr[r.status]||'badge-info'}">${r.status}</span></td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No records match filters.</td></tr>';
+
+  const totalPages = Math.ceil(total / size);
+  let pager = `<button onclick="renderPage(${page-1})" ${page<=1?'disabled':''}>‹</button>`;
+  for (let p = Math.max(1, page-2); p <= Math.min(totalPages, page+2); p++)
+    pager += `<button class="${p===page?'active':''}" onclick="renderPage(${p})">${p}</button>`;
+  pager += `<button onclick="renderPage(${page+1})" ${page>=totalPages?'disabled':''}>›</button>`;
+  pager += `<span class="pager-info">Showing ${from+1}–${Math.min(from+size,total)} of ${total}</span>`;
+  document.getElementById('pager').innerHTML = pager;
+}
+
+function sortBy(col) {
+  if (currentSort === col) currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+  else { currentSort = col; currentSortDir = 'asc'; }
+  document.querySelectorAll('.txh-table thead th').forEach(th => th.classList.remove('sort-asc','sort-desc'));
+  const thMap = {id:'th-id',category:'th-cat',amount:'th-amount',date:'th-date'};
+  if (thMap[col]) document.getElementById(thMap[col]).classList.add('sort-' + currentSortDir);
+  loadData(1);
+}
+
+function clearFilters() {
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-min-amount').value = '';
+  document.getElementById('filter-max-amount').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-search').value = '';
+  applyFilters();
+}
+
+function exportCSV() {
+  if (!filteredData.length) return showToast('No data to export','warning');
+  const cols = Object.keys(filteredData[0]);
+  const csv = [cols.join(','), ...filteredData.map(r => cols.map(c=>`"${r[c]}"`).join(','))].join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'bugbank-txn-' + Date.now() + '.csv'; a.click();
+  showToast('CSV exported!','success');
+}
+
+function toggleAutoRefresh() {
+  autoRefreshEnabled = !autoRefreshEnabled;
+  const sw = document.getElementById('auto-refresh-toggle');
+  sw.classList.toggle('on', autoRefreshEnabled);
+  if (autoRefreshEnabled) { startAutoRefresh(); }
+  else { clearInterval(autoRefreshTimer); document.getElementById('refresh-countdown').innerText = ''; }
+}
+
+function startAutoRefresh() {
+  countdown = 30;
+  autoRefreshTimer = setInterval(() => {
+    countdown--;
+    document.getElementById('refresh-countdown').innerText = ` (${countdown}s)`;
+    if (countdown <= 0) { loadData(currentPage); countdown = 30; }
+  }, 1000);
+}
+
+loadData(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugBank — My Profile</title>
+  <meta name="description" content="BugBank profile update page with form validation, file upload, and conditional sections.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .pf-wrap{max-width:800px;margin:0 auto;padding:2rem 1.5rem;}
+    .pf-header{display:flex;align-items:center;gap:1.5rem;background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:1.75rem;margin-bottom:2rem;}
+    .pf-avatar-wrap{position:relative;flex-shrink:0;}
+    .pf-avatar{width:90px;height:90px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;font-size:2.5rem;font-weight:800;color:#fff;border:3px solid var(--border);overflow:hidden;}
+    .pf-avatar img{width:100%;height:100%;object-fit:cover;display:none;}
+    .pf-avatar-edit{position:absolute;bottom:0;right:0;background:var(--accent-indigo);color:#fff;border:none;border-radius:50%;width:26px;height:26px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .pf-info h2{font-size:1.3rem;margin:0 0 .25rem;color:var(--text-primary);}
+    .pf-info p{color:var(--text-muted);font-size:.88rem;margin:0;}
+    .pf-card{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem;}
+    .pf-card h3{font-size:1rem;margin:0 0 1.5rem;color:var(--text-secondary);display:flex;align-items:center;gap:.5rem;}
+    .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+    @media(max-width:580px){.pf-grid{grid-template-columns:1fr;}}
+    .pf-field{display:flex;flex-direction:column;gap:.35rem;}
+    .pf-field label{font-size:.78rem;color:var(--text-muted);font-weight:600;}
+    .pf-field input,.pf-field select,.pf-field textarea{padding:.5rem .75rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:.9rem;font-family:inherit;transition:.2s;}
+    .pf-field input:focus,.pf-field select:focus,.pf-field textarea:focus{border-color:var(--accent-indigo);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+    .pf-field input.input-error{border-color:#f87171;}
+    .pf-field input.input-ok{border-color:#4ade80;}
+    .field-error{font-size:.75rem;color:#f87171;display:none;margin-top:.2rem;}
+    .field-hint{font-size:.72rem;color:var(--text-muted);margin-top:.2rem;}
+    .radio-group,.checkbox-group{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.25rem;}
+    .radio-item,.cb-item{display:flex;align-items:center;gap:.4rem;font-size:.88rem;color:var(--text-secondary);cursor:pointer;}
+    .password-toggle{position:relative;}
+    .password-toggle input{width:100%;padding-right:2.5rem;box-sizing:border-box;}
+    .password-toggle button{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;}
+    .strength-bar{height:4px;border-radius:2px;margin-top:.35rem;background:var(--surface-2);overflow:hidden;}
+    .strength-fill{height:100%;border-radius:2px;transition:.3s;width:0;}
+    .strength-label{font-size:.72rem;margin-top:.25rem;}
+    .pwd-section{overflow:hidden;transition:max-height .3s ease;max-height:0;}
+    .pwd-section.open{max-height:600px;}
+    .toggle-pwd-row{display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.5rem 0;color:var(--accent-indigo);font-size:.9rem;user-select:none;}
+    .profile-save-bar{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;}
+    .save-badge{display:none;padding:.3rem .75rem;border-radius:8px;font-size:.8rem;font-weight:600;}
+    .save-badge.ok{background:rgba(74,222,128,.15);color:#4ade80;display:inline-block;}
+    .save-badge.err{background:rgba(248,113,113,.15);color:#f87171;display:inline-block;}
+  </style>
+</head>
+<body>
+<div class="pf-wrap">
+
+  <!-- Profile Header -->
+  <div class="pf-header">
+    <div class="pf-avatar-wrap">
+      <div class="pf-avatar" id="pf-avatar-display">
+        <span id="pf-avatar-initial">U</span>
+        <img id="pf-avatar-img" alt="Profile photo">
+      </div>
+      <button class="pf-avatar-edit" onclick="document.getElementById('pf-photo-input').click()" title="Change photo">✏️</button>
+      <input type="file" id="pf-photo-input" name="profilePhoto" accept="image/*" style="display:none;" onchange="handleProfilePhoto(event)">
+    </div>
+    <div class="pf-info">
+      <h2 id="pf-display-name">Your Name</h2>
+      <p id="pf-display-email">user@bugbank.com</p>
+      <p style="margin-top:.4rem;"><span class="badge badge-success" style="font-size:.72rem;">✓ Verified</span> &nbsp; <span class="badge badge-purple" style="font-size:.72rem;">KYC Complete</span></p>
+    </div>
+    <a href="dashboard.html" class="btn btn-ghost btn-sm" style="margin-left:auto;text-decoration:none;">← Dashboard</a>
+  </div>
+
+  <!-- Personal Info -->
+  <form id="profile-form" onsubmit="saveProfile(event)" novalidate>
+  <div class="pf-card">
+    <h3>👤 Personal Information</h3>
+    <div class="pf-grid">
+      <div class="pf-field">
+        <label for="pf-name">Full Name *</label>
+        <input type="text" id="pf-name" name="fullName" placeholder="John Doe" required minlength="3" oninput="validateField(this)">
+        <div class="field-error" id="err-name">Name must be at least 3 characters</div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-email">Email Address *</label>
+        <input type="email" id="pf-email" name="email" placeholder="john@example.com" required oninput="validateField(this)">
+        <div class="field-error" id="err-email">Please enter a valid email address</div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-phone">Phone Number *</label>
+        <input type="tel" id="pf-phone" name="phone" placeholder="+91 9876543210" pattern="^\+?[0-9\s\-]{10,15}$" required oninput="validateField(this)">
+        <div class="field-error" id="err-phone">Enter a valid 10–15 digit phone number</div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-dob">Date of Birth *</label>
+        <input type="date" id="pf-dob" name="dob" required max="" oninput="validateField(this)">
+        <div class="field-error" id="err-dob">Date of birth is required</div>
+      </div>
+      <div class="pf-field" style="grid-column:1/-1;">
+        <label for="pf-address">Address</label>
+        <textarea id="pf-address" name="address" rows="2" placeholder="123, Street Name, City, State — 400001" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gender + Language -->
+  <div class="pf-card">
+    <h3>⚙️ Preferences</h3>
+    <div class="pf-grid">
+      <div class="pf-field">
+        <label>Gender</label>
+        <div class="radio-group">
+          <label class="radio-item"><input type="radio" id="gender-male" name="gender" value="male"> Male</label>
+          <label class="radio-item"><input type="radio" id="gender-female" name="gender" value="female"> Female</label>
+          <label class="radio-item"><input type="radio" id="gender-other" name="gender" value="other"> Other</label>
+          <label class="radio-item"><input type="radio" id="gender-prefer-not" name="gender" value="prefer-not"> Prefer not to say</label>
+        </div>
+      </div>
+      <div class="pf-field">
+        <label>Notification Language</label>
+        <div class="checkbox-group">
+          <label class="cb-item"><input type="checkbox" id="lang-en" name="language" value="en" checked> English</label>
+          <label class="cb-item"><input type="checkbox" id="lang-hi" name="language" value="hi"> Hindi</label>
+          <label class="cb-item"><input type="checkbox" id="lang-ta" name="language" value="ta"> Tamil</label>
+          <label class="cb-item"><input type="checkbox" id="lang-te" name="language" value="te"> Telugu</label>
+          <label class="cb-item"><input type="checkbox" id="lang-mr" name="language" value="mr"> Marathi</label>
+        </div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-currency">Preferred Currency</label>
+        <select id="pf-currency" name="currency">
+          <option value="INR">₹ INR — Indian Rupee</option>
+          <option value="USD">$ USD — US Dollar</option>
+          <option value="EUR">€ EUR — Euro</option>
+          <option value="GBP">£ GBP — British Pound</option>
+          <option value="JPY">¥ JPY — Japanese Yen</option>
+        </select>
+      </div>
+      <div class="pf-field">
+        <label for="pf-timezone">Time Zone</label>
+        <select id="pf-timezone" name="timezone">
+          <option value="IST">IST — India Standard Time (UTC+5:30)</option>
+          <option value="UTC">UTC — Coordinated Universal Time</option>
+          <option value="EST">EST — Eastern Standard Time (UTC-5)</option>
+          <option value="PST">PST — Pacific Standard Time (UTC-8)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC Document Upload -->
+  <div class="pf-card">
+    <h3>📄 KYC Documents</h3>
+    <div class="pf-grid">
+      <div class="pf-field">
+        <label for="pf-id-proof">ID Proof (Aadhar / Passport)</label>
+        <input type="file" id="pf-id-proof" name="idProof" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName(this,'id-proof-name')">
+        <div id="id-proof-name" class="field-hint"></div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-address-proof">Address Proof</label>
+        <input type="file" id="pf-address-proof" name="addressProof" accept=".pdf,.jpg,.jpeg,.png" onchange="showFileName(this,'address-proof-name')">
+        <div id="address-proof-name" class="field-hint"></div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-pan">PAN Card Number</label>
+        <input type="text" id="pf-pan" name="pan" placeholder="ABCDE1234F" maxlength="10" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" oninput="this.value=this.value.toUpperCase();validateField(this)">
+        <div class="field-error" id="err-pan">Invalid PAN format (e.g. ABCDE1234F)</div>
+        <div class="field-hint">Format: 5 letters, 4 digits, 1 letter</div>
+      </div>
+      <div class="pf-field">
+        <label for="pf-aadhaar">Aadhaar Number (last 4 digits)</label>
+        <input type="text" id="pf-aadhaar" name="aadhaar" placeholder="XXXX" maxlength="4" pattern="[0-9]{4}" oninput="validateField(this)">
+        <div class="field-error" id="err-aadhaar">Enter exactly 4 digits</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password (conditional) -->
+  <div class="pf-card">
+    <div class="toggle-pwd-row" id="pwd-toggle-row" onclick="togglePasswordSection()">
+      <span>🔐</span>
+      <span>Change Password</span>
+      <span id="pwd-toggle-icon" style="margin-left:auto;">▾</span>
+    </div>
+    <div class="pwd-section" id="pwd-section">
+      <div class="pf-grid" style="margin-top:1rem;">
+        <div class="pf-field">
+          <label for="pf-current-pwd">Current Password</label>
+          <div class="password-toggle">
+            <input type="password" id="pf-current-pwd" name="currentPassword" placeholder="Your current password">
+            <button type="button" onclick="togglePwdVisibility('pf-current-pwd',this)">👁</button>
+          </div>
+        </div>
+        <div style="display:none;"></div>
+        <div class="pf-field">
+          <label for="pf-new-pwd">New Password *</label>
+          <div class="password-toggle">
+            <input type="password" id="pf-new-pwd" name="newPassword" placeholder="Min 8 chars, 1 number, 1 symbol" oninput="checkPasswordStrength(this.value)">
+            <button type="button" onclick="togglePwdVisibility('pf-new-pwd',this)">👁</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+          <div class="strength-label" id="strength-label"></div>
+        </div>
+        <div class="pf-field">
+          <label for="pf-confirm-pwd">Confirm New Password *</label>
+          <div class="password-toggle">
+            <input type="password" id="pf-confirm-pwd" name="confirmPassword" placeholder="Repeat new password" oninput="validateConfirmPwd()">
+            <button type="button" onclick="togglePwdVisibility('pf-confirm-pwd',this)">👁</button>
+          </div>
+          <div class="field-error" id="err-confirm-pwd">Passwords do not match</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save -->
+  <div class="profile-save-bar">
+    <button type="submit" id="btn-save-profile" class="btn btn-primary">💾 Save Profile</button>
+    <button type="button" id="btn-reset-profile" class="btn btn-ghost" onclick="document.getElementById('profile-form').reset(); resetValidation();">↺ Reset</button>
+    <span class="save-badge" id="save-badge"></span>
+  </div>
+  </form>
+
+</div>
+<div id="toast-container"></div>
+<script src="script.js"></script>
+<script>
+// Init
+window.addEventListener('load', () => {
+  const uc = localStorage.getItem('userCode');
+  if (uc) {
+    document.getElementById('pf-avatar-initial').innerText = uc.charAt(0).toUpperCase();
+    document.getElementById('pf-display-name').innerText = 'User ' + uc;
+    document.getElementById('pf-display-email').innerText = uc.toLowerCase().replace(/\s/g,'') + '@bugbank.com';
+  }
+  document.getElementById('pf-dob').max = new Date().toISOString().split('T')[0];
+});
+
+function validateField(el) {
+  const errEl = document.getElementById('err-' + el.id.replace('pf-',''));
+  let valid = el.checkValidity();
+  if (el.id === 'pf-email') valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value);
+  if (el.id === 'pf-pan') valid = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(el.value);
+  if (el.id === 'pf-aadhaar') valid = /^[0-9]{4}$/.test(el.value);
+  el.classList.toggle('input-ok', valid && el.value.length > 0);
+  el.classList.toggle('input-error', !valid && el.value.length > 0);
+  if (errEl) errEl.style.display = (!valid && el.value.length > 0) ? 'block' : 'none';
+}
+
+function checkPasswordStrength(pwd) {
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (/[A-Z]/.test(pwd)) score++;
+  if (/[0-9]/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  const fill = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  const levels = [{w:'25%',c:'#f87171',t:'Weak'},{w:'50%',c:'#fb923c',t:'Fair'},{w:'75%',c:'#facc15',t:'Good'},{w:'100%',c:'#4ade80',t:'Strong'}];
+  if (pwd.length === 0) { fill.style.width='0'; label.innerText=''; return; }
+  const lv = levels[Math.min(score-1,3)] || levels[0];
+  fill.style.width = lv.w; fill.style.background = lv.c;
+  label.innerText = lv.t; label.style.color = lv.c;
+}
+
+function validateConfirmPwd() {
+  const np = document.getElementById('pf-new-pwd').value;
+  const cp = document.getElementById('pf-confirm-pwd').value;
+  const err = document.getElementById('err-confirm-pwd');
+  if (cp.length === 0) { err.style.display='none'; return; }
+  err.style.display = np !== cp ? 'block' : 'none';
+  document.getElementById('pf-confirm-pwd').classList.toggle('input-ok', np === cp && cp.length > 0);
+  document.getElementById('pf-confirm-pwd').classList.toggle('input-error', np !== cp);
+}
+
+function togglePasswordSection() {
+  const sec = document.getElementById('pwd-section');
+  const icon = document.getElementById('pwd-toggle-icon');
+  sec.classList.toggle('open');
+  icon.innerText = sec.classList.contains('open') ? '▴' : '▾';
+}
+
+function togglePwdVisibility(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.innerText = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function handleProfilePhoto(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('pf-avatar-img');
+    const ini = document.getElementById('pf-avatar-initial');
+    img.src = ev.target.result; img.style.display = 'block'; ini.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function showFileName(input, targetId) {
+  const el = document.getElementById(targetId);
+  el.innerText = input.files[0] ? '📄 ' + input.files[0].name : '';
+}
+
+function saveProfile(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-save-profile');
+  const badge = document.getElementById('save-badge');
+
+  // Validate required fields
+  const required = ['pf-name','pf-email','pf-phone','pf-dob'];
+  let allOk = true;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    validateField(el);
+    if (!el.checkValidity() || el.classList.contains('input-error')) allOk = false;
+  });
+
+  // Check confirm password if section open
+  if (document.getElementById('pwd-section').classList.contains('open')) {
+    const np = document.getElementById('pf-new-pwd').value;
+    const cp = document.getElementById('pf-confirm-pwd').value;
+    if (np && np !== cp) { allOk = false; document.getElementById('err-confirm-pwd').style.display='block'; }
+  }
+
+  badge.className = 'save-badge'; badge.style.display = 'none';
+  if (!allOk) {
+    badge.className = 'save-badge err'; badge.innerText = '⚠ Please fix errors above';
+    showToast('Please fix form errors', 'error'); return;
+  }
+
+  btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Saving…';
+  setTimeout(() => {
+    btn.disabled = false; btn.innerHTML = '💾 Save Profile';
+    badge.className = 'save-badge ok'; badge.innerText = '✅ Profile saved!';
+    const name = document.getElementById('pf-name').value;
+    if (name) { document.getElementById('pf-display-name').innerText = name; document.getElementById('pf-avatar-initial').innerText = name.charAt(0).toUpperCase(); }
+    showToast('Profile updated successfully', 'success');
+  }, 800);
+}
+
+function resetValidation() {
+  document.querySelectorAll('.pf-field input').forEach(el => el.classList.remove('input-ok','input-error'));
+  document.querySelectorAll('.field-error').forEach(el => el.style.display='none');
+  document.getElementById('save-badge').style.display='none';
+  document.getElementById('strength-fill').style.width='0';
+  document.getElementById('strength-label').innerText='';
+}
+</script>
+</body>
+</html>
