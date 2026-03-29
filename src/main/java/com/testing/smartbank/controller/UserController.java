@@ -33,6 +33,7 @@ public class UserController {
     public Object loginUser(@RequestBody User user) {
         User loggedInUser = userService.login(user.getEmail(), user.getPassword());
 
+
         if (loggedInUser != null) {
             return loggedInUser; // 🔥 return full user
         } else {

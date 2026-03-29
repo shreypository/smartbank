@@ -34,6 +34,9 @@
             <button id="nav-cards"       class="nav-item" onclick="showSection('cards')">
                 <span class="nav-icon">💳</span><span>Cards</span>
             </button>
+            <button id="nav-fd" class="nav-item" onclick="showSection('fd')">
+                <span class="nav-icon">🏦</span><span>Fixed Deposits</span>
+            </button>
             <button id="nav-investments" class="nav-item" onclick="showSection('investments')">
                 <span class="nav-icon">📈</span><span>Investments</span>
             </button>
@@ -273,6 +276,48 @@
                     <p>Click "Refresh" to load your cards</p>
                 </div>
             </div>
+        </div>
+
+        <div id="fd" class="section hidden">
+
+            <div class="section-header">
+                <h2>🏦 Fixed Deposits</h2>
+                <p>Secure returns with guaranteed maturity</p>
+            </div>
+
+            <!-- CREATE FD -->
+            <div class="form-card">
+                <div class="form-grid">
+
+                    <div class="form-field">
+                        <label>Select Account</label>
+                        <select id="fdAccountSelect"></select>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="fdAmount" placeholder="Enter amount">
+                    </div>
+
+                    <div class="form-field">
+                        <label>Duration (months)</label>
+                        <input type="number" id="fdMonths" placeholder="e.g. 12">
+                    </div>
+
+                </div>
+
+                <button class="btn btn-primary" onclick="createFDUI()">Create FD</button>
+                <div id="fdResult" class="result-box"></div>
+            </div>
+
+            <!-- FD LIST -->
+            <div style="display:flex;justify-content:space-between;margin-top:1rem;">
+                <div class="sub-h3">Your Fixed Deposits</div>
+                <button class="btn btn-ghost btn-sm" onclick="loadFDs()">↺ Refresh</button>
+            </div>
+
+            <div id="fdList"></div>
+
         </div>
 
         <!-- ─── INVESTMENTS ─── -->
