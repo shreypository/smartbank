@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugBank — Widget Dashboard</title>
+  <meta name="description" content="BugBank draggable widget dashboard — drag and drop to customise your banking overview.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .wd-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .wd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .wd-header h1 { font-size: 1.75rem; background: var(--grad-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0; }
+    .wd-hint { font-size: .82rem; color: var(--text-muted); background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: .6rem 1rem; margin-bottom: 1.5rem; }
+    /* Widget Grid */
+    .widget-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; min-height: 400px; }
+    @media(max-width:768px){ .widget-grid { grid-template-columns: 1fr 1fr; } }
+    @media(max-width:480px){ .widget-grid { grid-template-columns: 1fr; } }
+    .widget { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; cursor: grab; user-select: none; transition: box-shadow .2s, transform .2s, border-color .2s; position: relative; }
+    .widget:active { cursor: grabbing; }
+    .widget.dragging { opacity: .55; transform: scale(.96); box-shadow: 0 8px 32px rgba(0,0,0,.4); border-color: var(--accent-indigo); }
+    .widget.drag-over-target { border-color: var(--accent-indigo); background: rgba(99,102,241,.06); box-shadow: 0 0 0 2px rgba(99,102,241,.3); }
+    .widget:hover { box-shadow: 0 4px 20px rgba(0,0,0,.25); border-color: rgba(99,102,241,.4); }
+    .widget-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+    .widget-title { font-size: .82rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+    .widget-icon { font-size: 1.1rem; }
+    .widget-drag-handle { font-size: .9rem; color: var(--text-muted); cursor: grab; opacity: .5; }
+    /* Hover reveal on widget */
+    .widget-overlay { display: none; position: absolute; inset: 0; background: rgba(99,102,241,.08); border-radius: 14px; align-items: center; justify-content: center; font-size: .8rem; color: var(--accent-indigo); font-weight: 600; pointer-events: none; }
+    .widget:hover .widget-overlay { display: flex; }
+    /* Balance Widget */
+    .balance-big { font-size: 2rem; font-weight: 800; background: var(--grad-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: .25rem 0; }
+    .balance-change { font-size: .78rem; color: #4ade80; }
+    /* Chart Widget (fake) */
+    .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 70px; margin-top: .5rem; }
+    .chart-bar { flex: 1; border-radius: 4px 4px 0 0; background: var(--accent-indigo); opacity: .7; transition: .3s; cursor: pointer; }
+    .chart-bar:hover { opacity: 1; transform: scaleY(1.05); }
+    /* Transactions mini-table */
+    .mini-txn { font-size: .78rem; }
+    .mini-txn-row { display: flex; justify-content: space-between; align-items: center; padding: .35rem 0; border-bottom: 1px solid var(--border); }
+    .mini-txn-row:last-child { border-bottom: none; }
+    .mini-txn-type { color: var(--text-muted); }
+    .mini-txn-amt-in { color: #4ade80; font-weight: 700; }
+    .mini-txn-amt-out { color: #f87171; font-weight: 700; }
+    /* Loan Progress */
+    .progress-bar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin: .5rem 0; }
+    .progress-fill { height: 100%; border-radius: 4px; background: var(--grad-primary); transition: width .5s ease; }
+    .loan-meta { display: flex; justify-content: space-between; font-size: .75rem; color: var(--text-muted); }
+    /* Ticker */
+    .ticker-row { display: flex; justify-content: space-between; padding: .3rem 0; font-size: .82rem; border-bottom: 1px solid var(--border); }
+    .ticker-row:last-child { border-bottom: none; }
+    .ticker-up { color: #4ade80; } .ticker-down { color: #f87171; }
+    /* Quick Transfer mini */
+    .qt-form input, .qt-form select { padding: .4rem .6rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: .82rem; width: 100%; box-sizing: border-box; margin-bottom: .5rem; }
+    /* Notifications widget */
+    .notif-item { display: flex; gap: .6rem; padding: .4rem 0; border-bottom: 1px solid var(--border); font-size: .8rem; align-items: flex-start; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .3rem; }
+    /* Drop zone (empty slot) */
+    .drop-slot { border: 2px dashed var(--border); border-radius: 14px; min-height: 120px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .85rem; transition: .2s; }
+    .drop-slot.drag-over-target { border-color: var(--accent-indigo); color: var(--accent-indigo); background: rgba(99,102,241,.04); }
+  </style>
+</head>
+<body>
+
+<div class="wd-wrap">
+  <div class="wd-header">
+    <h1>📊 Widget Dashboard</h1>
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button id="btn-reset-layout" class="btn btn-ghost btn-sm" onclick="resetLayout()">↺ Reset Layout</button>
+      <button id="btn-add-widget" class="btn btn-ghost btn-sm" onclick="addEmptySlot()">＋ Add Slot</button>
+      <a href="dashboard.html" class="btn btn-ghost btn-sm" style="text-decoration:none;">← Dashboard</a>
+    </div>
+  </div>
+
+  <div class="wd-hint">
+    🖱️ <strong>Drag &amp; drop</strong> widgets to rearrange your dashboard. Hover to preview. Right-click a widget to pin/unpin.
+  </div>
+
+  <!-- Widget Grid -->
+  <div class="widget-grid" id="widget-grid">
+
+    <!-- Widget 1: Balance -->
+    <div class="widget" id="widget-balance" draggable="true" data-id="balance"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('balance')" oncontextmenu="wRightClick(event,'balance')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Total Balance</span>
+        <span class="widget-icon">💰</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div class="balance-big" id="w-balance-val">₹—</div>
+      <div class="balance-change">↑ +2.3% vs last month</div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:.35rem;">Across all accounts</div>
+    </div>
+
+    <!-- Widget 2: Mini Chart -->
+    <div class="widget" id="widget-chart" draggable="true" data-id="chart"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('chart')" oncontextmenu="wRightClick(event,'chart')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Spending Chart</span>
+        <span class="widget-icon">📈</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.25rem;">Last 7 days (₹)</div>
+      <div class="mini-chart" id="mini-chart">
+        <!-- bars injected by JS -->
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--text-muted);margin-top:.25rem;">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+    </div>
+
+    <!-- Widget 3: Recent Transactions -->
+    <div class="widget" id="widget-transactions" draggable="true" data-id="transactions"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('transactions')" oncontextmenu="wRightClick(event,'transactions')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Recent Transactions</span>
+        <span class="widget-icon">📋</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div class="mini-txn" id="mini-txn-list">
+        <div class="mini-txn-row"><span class="mini-txn-type">TRANSFER_IN</span><span class="mini-txn-amt-in">+₹12,500</span></div>
+        <div class="mini-txn-row"><span class="mini-txn-type">WITHDRAWAL</span><span class="mini-txn-amt-out">-₹3,200</span></div>
+        <div class="mini-txn-row"><span class="mini-txn-type">DEPOSIT</span><span class="mini-txn-amt-in">+₹50,000</span></div>
+        <div class="mini-txn-row"><span class="mini-txn-type">LOAN_PAYMENT</span><span class="mini-txn-amt-out">-₹8,750</span></div>
+        <div class="mini-txn-row"><span class="mini-txn-type">INVESTMENT</span><span class="mini-txn-amt-out">-₹25,000</span></div>
+      </div>
+    </div>
+
+    <!-- Widget 4: Loan Progress -->
+    <div class="widget" id="widget-loan" draggable="true" data-id="loan"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('loan')" oncontextmenu="wRightClick(event,'loan')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Loan Progress</span>
+        <span class="widget-icon">🏠</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);margin-bottom:.3rem;">Home Loan</div>
+      <div class="progress-bar"><div class="progress-fill" id="loan-progress-fill" style="width:0%;"></div></div>
+      <div class="loan-meta">
+        <span>Paid: <strong style="color:#4ade80;">₹3,20,000</strong></span>
+        <span>Remaining: <strong style="color:#f87171;">₹6,80,000</strong></span>
+      </div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.5rem;">32% completed • 18 EMIs remaining</div>
+    </div>
+
+    <!-- Widget 5: Exchange Rates Ticker -->
+    <div class="widget" id="widget-ticker" draggable="true" data-id="ticker"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('ticker')" oncontextmenu="wRightClick(event,'ticker')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Exchange Rates</span>
+        <span class="widget-icon">🌐</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div id="ticker-rows">
+        <div class="ticker-row"><span>USD/INR</span><span id="rate-usd" class="ticker-up">83.42 ↑</span></div>
+        <div class="ticker-row"><span>EUR/INR</span><span id="rate-eur" class="ticker-down">89.15 ↓</span></div>
+        <div class="ticker-row"><span>GBP/INR</span><span id="rate-gbp" class="ticker-up">106.30 ↑</span></div>
+        <div class="ticker-row"><span>JPY/INR</span><span id="rate-jpy" class="ticker-down">0.5623 ↓</span></div>
+      </div>
+      <div style="font-size:.68rem;color:var(--text-muted);margin-top:.5rem;" id="ticker-update">Simulated rates — updates every 5s</div>
+    </div>
+
+    <!-- Widget 6: Quick Transfer -->
+    <div class="widget" id="widget-quick-transfer" draggable="true" data-id="quick-transfer"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('quick-transfer')" oncontextmenu="wRightClick(event,'quick-transfer')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Quick Transfer</span>
+        <span class="widget-icon">↔️</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div class="qt-form">
+        <input type="text" id="qt-to" placeholder="Recipient account number" name="qtTo">
+        <input type="number" id="qt-amount" placeholder="Amount (₹)" name="qtAmount" min="1">
+        <select id="qt-from" name="qtFrom">
+          <option value="">-- From Account --</option>
+        </select>
+        <button id="btn-quick-send" class="btn btn-primary" style="width:100%;font-size:.82rem;padding:.4rem;" onclick="quickTransfer()">Send →</button>
+        <div id="qt-result" style="font-size:.75rem;color:var(--text-muted);margin-top:.35rem;"></div>
+      </div>
+    </div>
+
+    <!-- Widget 7: Notifications -->
+    <div class="widget" id="widget-notifications" draggable="true" data-id="notifications"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('notifications')" oncontextmenu="wRightClick(event,'notifications')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Notifications</span>
+        <span class="widget-icon">🔔</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div>
+        <div class="notif-item"><div class="notif-dot" style="background:#4ade80;"></div><div><div>Salary credited: ₹75,000</div><div style="color:var(--text-muted);font-size:.72rem;">Today 9:00 AM</div></div></div>
+        <div class="notif-item"><div class="notif-dot" style="background:#facc15;"></div><div><div>EMI due in 3 days</div><div style="color:var(--text-muted);font-size:.72rem;">Loan #L-2841</div></div></div>
+        <div class="notif-item"><div class="notif-dot" style="background:#60a5fa;"></div><div><div>Investment matured</div><div style="color:var(--text-muted);font-size:.72rem;">HDFC Fund ₹50,000</div></div></div>
+        <div class="notif-item"><div class="notif-dot" style="background:#f87171;"></div><div><div>Failed txn: ₹12,000</div><div style="color:var(--text-muted);font-size:.72rem;">Insufficient balance</div></div></div>
+      </div>
+    </div>
+
+    <!-- Widget 8: Investment Overview -->
+    <div class="widget" id="widget-investment" draggable="true" data-id="investment"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('investment')" oncontextmenu="wRightClick(event,'investment')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">Investments</span>
+        <span class="widget-icon">📈</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div style="font-size:1.5rem;font-weight:800;color:#4ade80;">₹1,25,000</div>
+      <div style="font-size:.78rem;color:var(--text-muted);margin-top:.25rem;">Total portfolio value</div>
+      <div style="font-size:.82rem;color:#4ade80;margin-top:.4rem;">↑ +₹15,000 (13.6%) overall return</div>
+      <div style="margin-top:.65rem;display:flex;gap:.4rem;flex-wrap:wrap;">
+        <span class="badge badge-success" style="font-size:.68rem;">HDFC: ₹50k</span>
+        <span class="badge badge-purple" style="font-size:.68rem;">SBI: ₹35k</span>
+        <span class="badge badge-info" style="font-size:.68rem;">ICICI: ₹40k</span>
+      </div>
+    </div>
+
+    <!-- Widget 9: Profile Quick -->
+    <div class="widget" id="widget-profile" draggable="true" data-id="profile"
+      ondragstart="wDragStart(event)" ondragover="wDragOver(event)" ondrop="wDrop(event)" ondragleave="wDragLeave(event)"
+      ondblclick="wDoubleClick('profile')" oncontextmenu="wRightClick(event,'profile')">
+      <div class="widget-overlay">↕ Drag to reorder</div>
+      <div class="widget-header">
+        <span class="widget-title">My Profile</span>
+        <span class="widget-icon">👤</span>
+        <span class="widget-drag-handle">⠿</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+        <div style="width:42px;height:42px;border-radius:50%;background:var(--grad-primary);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;" id="w-profile-avatar">U</div>
+        <div>
+          <div style="font-weight:700;font-size:.9rem;" id="w-profile-name">User</div>
+          <div style="font-size:.75rem;color:var(--text-muted);" id="w-profile-code">—</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+        <a href="profile.html" class="btn btn-ghost btn-sm" style="text-decoration:none;font-size:.75rem;">Edit Profile</a>
+        <button class="btn btn-ghost btn-sm" style="font-size:.75rem;" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+  </div><!-- end widget-grid -->
+
+  <!-- Context Menu -->
+  <div id="w-context-menu" class="context-menu" style="z-index:999;">
+    <div class="context-menu-item" id="wctx-pin" onclick="wCtxPin()">📌 Pin Widget</div>
+    <div class="context-menu-item" id="wctx-refresh" onclick="wCtxRefresh()">↺ Refresh Widget</div>
+    <div class="context-menu-item" id="wctx-hide" onclick="wCtxHide()">🙈 Hide Widget</div>
+  </div>
+
+</div><!-- end wd-wrap -->
+
+<div id="toast-container"></div>
+<script src="script.js"></script>
+<script>
+// ── DRAG & DROP ─────────────────────────────────────────────────
+let dragSrcId = null, ctxTargetId = null;
+
+function wDragStart(e) {
+  dragSrcId = e.currentTarget.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function wDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (e.currentTarget.id !== dragSrcId) e.currentTarget.classList.add('drag-over-target');
+}
+function wDragLeave(e) { e.currentTarget.classList.remove('drag-over-target'); }
+function wDrop(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  target.classList.remove('drag-over-target');
+  if (!dragSrcId || target.id === dragSrcId) return;
+  const grid = document.getElementById('widget-grid');
+  const src = document.getElementById(dragSrcId);
+  src.classList.remove('dragging');
+  // Swap DOM positions
+  const srcNext = src.nextSibling;
+  const tgtNext = target.nextSibling;
+  if (tgtNext === src) { grid.insertBefore(src, target); }
+  else if (srcNext === target) { grid.insertBefore(target, src); }
+  else { grid.insertBefore(src, tgtNext); grid.insertBefore(target, srcNext); }
+  dragSrcId = null;
+  showToast('Widget moved!', 'info');
+}
+document.addEventListener('dragend', () => {
+  document.querySelectorAll('.widget').forEach(w => w.classList.remove('dragging','drag-over-target'));
+});
+
+// ── DOUBLE CLICK ──────────────────────────────────────────────
+function wDoubleClick(id) { showToast(`Widget "${id}" double-clicked!`, 'info'); }
+
+// ── RIGHT CLICK ───────────────────────────────────────────────
+function wRightClick(e, id) {
+  e.preventDefault();
+  ctxTargetId = id;
+  const menu = document.getElementById('w-context-menu');
+  menu.style.left = e.clientX + 'px'; menu.style.top = e.clientY + 'px';
+  menu.classList.add('visible');
+}
+function wCtxPin() {
+  document.getElementById('w-context-menu').classList.remove('visible');
+  const w = document.querySelector(`.widget[data-id="${ctxTargetId}"]`);
+  if (w) { w.draggable = !w.draggable; showToast(w.draggable ? 'Widget unpinned' : 'Widget pinned', 'info'); }
+}
+function wCtxRefresh() { document.getElementById('w-context-menu').classList.remove('visible'); showToast(`Widget "${ctxTargetId}" refreshed`, 'success'); }
+function wCtxHide() {
+  document.getElementById('w-context-menu').classList.remove('visible');
+  const w = document.querySelector(`.widget[data-id="${ctxTargetId}"]`);
+  if (w) { w.style.display='none'; showToast('Widget hidden. Reset layout to restore.', 'info'); }
+}
+document.addEventListener('click', () => document.getElementById('w-context-menu').classList.remove('visible'));
+
+// ── RESET ─────────────────────────────────────────────────────
+function resetLayout() {
+  document.querySelectorAll('.widget').forEach(w => { w.style.display=''; w.draggable=true; });
+  showToast('Layout reset!', 'success');
+}
+
+function addEmptySlot() {
+  const slot = document.createElement('div');
+  slot.className = 'drop-slot';
+  slot.innerHTML = 'Empty Slot — drag a widget here';
+  slot.ondragover = e => { e.preventDefault(); slot.classList.add('drag-over-target'); };
+  slot.ondragleave = () => slot.classList.remove('drag-over-target');
+  slot.ondrop = e => { e.preventDefault(); slot.classList.remove('drag-over-target'); if(dragSrcId){ const src=document.getElementById(dragSrcId); slot.replaceWith(src); dragSrcId=null; } };
+  document.getElementById('widget-grid').appendChild(slot);
+}
+
+// ── CHART BARS ────────────────────────────────────────────────
+const barData = [45, 72, 38, 91, 60, 80, 55];
+const chartEl = document.getElementById('mini-chart');
+barData.forEach((v, i) => {
+  const bar = document.createElement('div');
+  bar.className = 'chart-bar';
+  bar.style.height = v + '%';
+  bar.title = `Day ${i+1}: ₹${(v*500).toLocaleString('en-IN')}`;
+  chartEl.appendChild(bar);
+});
+
+// ── TICKER UPDATE ─────────────────────────────────────────────
+const baseRates = { usd: 83.42, eur: 89.15, gbp: 106.30, jpy: 0.5623 };
+function updateTicker() {
+  ['usd','eur','gbp','jpy'].forEach(k => {
+    const delta = (Math.random() - 0.5) * 0.2;
+    baseRates[k] += delta;
+    const up = delta >= 0;
+    const el = document.getElementById('rate-' + k);
+    el.innerText = `${baseRates[k].toFixed(k==='jpy'?4:2)} ${up?'↑':'↓'}`;
+    el.className = up ? 'ticker-up' : 'ticker-down';
+  });
+  document.getElementById('ticker-update').innerText = 'Updated: ' + new Date().toLocaleTimeString('en-IN');
+}
+setInterval(updateTicker, 5000);
+
+// ── LOAN PROGRESS ANIMATE ─────────────────────────────────────
+setTimeout(() => { document.getElementById('loan-progress-fill').style.width = '32%'; }, 300);
+
+// ── QUICK TRANSFER ────────────────────────────────────────────
+function quickTransfer() {
+  const to = document.getElementById('qt-to').value;
+  const amt = document.getElementById('qt-amount').value;
+  const from = document.getElementById('qt-from').value;
+  const res = document.getElementById('qt-result');
+  if (!to || !amt || !from) { res.innerText = '⚠ Fill all fields'; res.style.color='#f87171'; return; }
+  res.style.color = 'var(--text-muted)';
+  res.innerText = 'Sending…';
+  setTimeout(() => { res.innerText = `✅ ₹${Number(amt).toLocaleString('en-IN')} sent to ${to}`; res.style.color='#4ade80'; }, 600);
+}
+
+// ── LOAD ACCOUNTS + BALANCE ───────────────────────────────────
+window.addEventListener('load', () => {
+  const uc = localStorage.getItem('userCode');
+  if (!uc) return;
+  document.getElementById('w-profile-code').innerText = uc;
+  document.getElementById('w-profile-name').innerText = 'User ' + uc;
+  document.getElementById('w-profile-avatar').innerText = uc.charAt(0).toUpperCase();
+
+  fetch(`/accounts/user?userCode=${uc}`).then(r => r.json()).then(accounts => {
+    const total = accounts.reduce((s,a) => s + a.balance, 0);
+    document.getElementById('w-balance-val').innerText = '₹' + Number(total).toLocaleString('en-IN');
+    const sel = document.getElementById('qt-from');
+    sel.innerHTML = '<option value="">-- From Account --</option>' +
+      accounts.map(a => `<option value="${a.id}">${a.accountType} (₹${Number(a.balance).toLocaleString('en-IN')})</option>`).join('');
+  }).catch(() => {});
+});
+</script>
+</body>
+</html>
