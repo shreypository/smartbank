@@ -5,7 +5,9 @@ import com.testing.smartbank.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class InvestmentService {
@@ -18,6 +20,9 @@ public class InvestmentService {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     // 🔥 INVEST
     public String invest(String userCode, String name, double amount, Long accountId) {
@@ -32,6 +37,16 @@ public class InvestmentService {
         // 💰 Deduct money
         account.setBalance(account.getBalance() - amount);
         accountRepository.save(account);
+
+        // 📝 Log Transaction
+        Transaction t = new Transaction();
+        t.setTransactionId(UUID.randomUUID().toString());
+        t.setType("INVESTMENT");
+        t.setCategory(name != null && !name.isEmpty() ? name : "Investment");
+        t.setAmount(amount);
+        t.setTimestamp(LocalDateTime.now());
+        t.setAccount(account);
+        transactionRepository.save(t);
 
         double returns = amount * 1.12; // +12%
 
@@ -67,6 +82,16 @@ public class InvestmentService {
         // 💰 Add money + 12%
         account.setBalance(account.getBalance() + inv.getReturnAmount());
         accountRepository.save(account);
+
+        // 📝 Log Transaction
+        Transaction t = new Transaction();
+        t.setTransactionId(UUID.randomUUID().toString());
+        t.setType("INVESTMENT_RETURN");
+        t.setCategory(inv.getInvestmentName() != null ? inv.getInvestmentName() : "Investment Return");
+        t.setAmount(inv.getReturnAmount());
+        t.setTimestamp(LocalDateTime.now());
+        t.setAccount(account);
+        transactionRepository.save(t);
 
         inv.setWithdrawn(true);
         investmentRepository.save(inv);

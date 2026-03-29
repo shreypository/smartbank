@@ -408,7 +408,7 @@ function viewTransactions(accountId) {
                         <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
                         <tbody>
                             ${last10.map(t => {
-                const isCredit = t.type.includes('DEPOSIT') || t.type.includes('IN');
+                const isCredit = t.type.includes('DEPOSIT') || t.type.includes('IN') || t.type.includes('DISBURSEMENT');
                 return `<tr>
                                     <td>${t.type}</td>
                                     <td><span class="${isCredit ? 'badge badge-success' : 'badge badge-danger'}">${isCredit ? '+' : '-'}₹${t.amount}</span></td>
@@ -587,8 +587,8 @@ function loadLast15Transactions() {
                     <table>
                         <thead><tr><th>ID</th><th>Type</th><th>Category</th><th>Amount</th><th>Date</th></tr></thead>
                         <tbody>
-                            ${last15.map(t => {
-                const isCredit = t.type.includes('IN') || t.type.includes('DEPOSIT');
+            ${last15.map(t => {
+                const isCredit = t.type.includes('IN') || t.type.includes('DEPOSIT') || t.type.includes('DISBURSEMENT');
                 return `<tr>
                                     <td style="font-size:0.78rem;color:var(--text-muted);">${t.transactionId}</td>
                                     <td>${t.type}</td>
@@ -676,6 +676,7 @@ function applyLoan() {
     const downPayment = document.getElementById('downPayment').value;
     const months = document.getElementById('loanMonths').value;
     const accountId = document.getElementById('loanApplyAccountSelect').value;
+    const category = document.getElementById('loanCategory') ? document.getElementById('loanCategory').value : 'Personal';
     const userCode = localStorage.getItem('userCode');
     const btn = document.getElementById('btn-apply-loan');
 
@@ -683,7 +684,7 @@ function applyLoan() {
 
     setLoading(btn, true);
 
-    fetch(`/loans/apply?userCode=${userCode}&amount=${amount}&downPayment=${downPayment}&months=${months}&accountId=${accountId}`, { method: 'POST' })
+    fetch(`/loans/apply?userCode=${userCode}&amount=${amount}&downPayment=${downPayment}&months=${months}&accountId=${accountId}&category=${category}`, { method: 'POST' })
         .then(res => res.text())
         .then(data => {
             setLoading(btn, false);
@@ -715,16 +716,20 @@ function loadLoans() {
             container.innerHTML = `
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>ID</th><th>Total Amount</th><th>Remaining</th><th>Status</th><th>Action</th></tr></thead>
+                        <thead><tr><th>ID</th><th>Category</th><th>Total Amount</th><th>Remaining</th><th>Status</th><th>Action</th></tr></thead>
                         <tbody>
-                            ${data.map(l => `
+                            ${data.map(l => {
+                                const isClosed = l.status === 'LOAN CLOSED';
+                                return `
                                 <tr>
                                     <td>${l.id}</td>
+                                    <td><span class="badge badge-purple">${l.category || 'Personal'}</span></td>
                                     <td>₹${Number(l.totalAmount).toLocaleString('en-IN')}</td>
-                                    <td>₹${Number(l.remainingAmount).toLocaleString('en-IN')}</td>
-                                    <td><span class="badge ${l.closed ? 'badge-success' : 'badge-amber'}">${l.closed ? 'CLOSED' : 'ACTIVE'}</span></td>
-                                    <td>${!l.closed ? `<button class="btn btn-primary btn-sm" onclick="openLoanPayModal(${l.id})">💳 Pay</button>` : '—'}</td>
-                                </tr>`).join('')}
+                                    <td>${isClosed ? '—' : '₹' + Number(l.remainingAmount).toLocaleString('en-IN')}</td>
+                                    <td><span class="badge ${isClosed ? 'badge-success' : 'badge-amber'}">${isClosed ? 'CLOSED' : 'ACTIVE'}</span></td>
+                                    <td>${!isClosed ? `<button class="btn btn-primary btn-sm" onclick="openLoanPayModal(${l.id})">💳 Pay</button>` : '—'}</td>
+                                </tr>`;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>`;

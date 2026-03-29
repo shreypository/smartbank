@@ -20,9 +20,10 @@ public class LoanController {
                             @RequestParam double amount,
                             @RequestParam double downPayment,
                             @RequestParam int months,
-                            @RequestParam Long accountId) {
+                            @RequestParam Long accountId,
+                            @RequestParam(required = false) String category) {
 
-        return loanService.applyLoan(userCode, amount, downPayment, months, accountId);
+        return loanService.applyLoan(userCode, amount, downPayment, months, accountId, category);
     }
 
     // 🔥 GET USER LOANS
