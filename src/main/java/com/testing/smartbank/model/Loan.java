@@ -14,6 +14,7 @@ public class Loan {
     private double totalAmount;
     private double remainingAmount;
     private String status;
+    private String category;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

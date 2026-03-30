@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugBank - Cucumber Bulk Transfer</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; color: #fff;}
+        th, td { padding: 0.75rem; border-bottom: 1px solid var(--border); text-align: left;}
+        th { color: var(--text-muted); text-transform: uppercase; font-size: 0.8rem;}
+    </style>
+</head>
+<body>
+    <div class="landing-bg"></div>
+    <div class="landing-container" style="max-width: 800px; margin: 50px auto;">
+        <div class="form-card">
+            <h2>Bulk Transfer Wizard</h2>
+            <p class="form-sub">Test Bed for Cucumber DataTables</p>
+            
+            <div class="form-grid" style="margin-bottom: 2rem;">
+                <div class="form-field"><label>Account ID</label><input type="number" id="payee-account" placeholder="e.g. 1045"></div>
+                <div class="form-field"><label>Amount (₹)</label><input type="number" id="payee-amount" placeholder="e.g. 500"></div>
+                <button id="btn-add-payee" class="btn btn-ghost" onclick="addPayee()" style="align-self: flex-end;">+ Add to Queue</button>
+            </div>
+            
+            <table id="transfer-table">
+                <thead><tr><th>Account ID</th><th>Amount (₹)</th><th>Status</th></tr></thead>
+                <tbody id="transfer-body"></tbody>
+            </table>
+            
+            <button id="btn-authorize" class="btn btn-primary" onclick="authorizeBatch()" style="width: 100%;">Authorize Batch Transfer</button>
+            <div id="batch-result" style="margin-top: 1rem; font-weight: bold; text-align: center;"></div>
+        </div>
+    </div>
+    
+    <script>
+        let transfers = [];
+        function addPayee() {
+            const acc = document.getElementById("payee-account").value;
+            const amt = document.getElementById("payee-amount").value;
+            if(!acc || !amt) return;
+            
+            transfers.push({account: acc, amount: amt, status: "Pending"});
+            renderTable();
+            document.getElementById("payee-account").value = '';
+            document.getElementById("payee-amount").value = '';
+        }
+        
+        function renderTable() {
+            const tbody = document.getElementById("transfer-body");
+            tbody.innerHTML = '';
+            transfers.forEach((t, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${t.account}</td><td>₹${t.amount}</td><td id="status-${index}">${t.status}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function authorizeBatch() {
+            const btn = document.getElementById("btn-authorize");
+            const resultBox = document.getElementById("batch-result");
+            if(transfers.length === 0) {
+                resultBox.innerText = "Queue is empty.";
+                resultBox.style.color = "var(--danger)";
+                return;
+            }
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                transfers.forEach((t, i) => {
+                    t.status = "Complete ✅";
+                    document.getElementById(`status-${i}`).innerText = t.status;
+                });
+                resultBox.innerText = "All transfers processed successfully.";
+                resultBox.style.color = "var(--success)";
+                btn.innerText = "Authorize Batch Transfer";
+                btn.disabled = false;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

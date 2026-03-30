@@ -14,23 +14,22 @@ public class InvestmentController {
     @Autowired
     private InvestmentService investmentService;
 
-    // 🔥 INVEST
+    // 🔥 UPDATED INVEST
     @PostMapping("/invest")
     public String invest(@RequestParam String userCode,
                          @RequestParam String name,
                          @RequestParam double amount,
-                         @RequestParam Long accountId) {
+                         @RequestParam Long accountId,
+                         @RequestParam double returnPercent) {
 
-        return investmentService.invest(userCode, name, amount, accountId);
+        return investmentService.invest(userCode, name, amount, accountId, returnPercent);
     }
 
-    // 🔥 GET USER INVESTMENTS
     @GetMapping("/user")
     public List<Investment> getInvestments(@RequestParam String userCode) {
         return investmentService.getInvestments(userCode);
     }
 
-    // 🔥 WITHDRAW (FIXED)
     @PostMapping("/withdraw")
     public String withdraw(@RequestParam Long investmentId,
                            @RequestParam Long accountId) {

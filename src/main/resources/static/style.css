@@ -196,6 +196,7 @@ body {
   animation: fadeSlideUp 0.8s 0.2s ease both;
 }
 
+/* BASE BUTTON */
 .btn-landing {
   padding: 0.85rem 2.2rem;
   border: none;
@@ -204,33 +205,53 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
+
+/* LIGHT SHINE EFFECT */
 .btn-landing::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.08);
   opacity: 0;
-  transition: var(--transition);
+  transition: all 0.3s ease;
 }
-.btn-landing:hover::after { opacity: 1; }
-.btn-landing:hover { transform: translateY(-3px); }
-.btn-landing:active { transform: translateY(0); }
 
+.btn-landing:hover::after {
+  opacity: 1;
+}
+
+/* 🔥 COMMON HOVER (ALL BUTTONS) */
+.btn-landing:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 0 25px rgba(0, 255, 200, 0.5);
+}
+
+/* CLICK FEEDBACK */
+.btn-landing:active {
+  transform: scale(0.96);
+  box-shadow: 0 0 10px rgba(0,255,200,0.3);
+}
+
+/* ===== PRIMARY ===== */
 .btn-primary-land {
   background: var(--grad-primary);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+  box-shadow: none;
 }
+
+/* ===== OUTLINE ===== */
 .btn-outline-land {
   background: rgba(255,255,255,0.07);
-  color: var(--text-primary);
+  color: #e2e8f0; /* 🔥 brighter text */
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(10px);
 }
+
+/* ===== ADMIN ===== */
 .btn-admin-land {
   background: rgba(168,85,247,0.15);
   color: #c084fc;
@@ -238,6 +259,23 @@ body {
   backdrop-filter: blur(10px);
 }
 
+/* 🔥 EXTRA: INDIVIDUAL GLOW COLORS */
+
+/* Primary glow */
+.btn-primary-land:hover {
+  box-shadow: 0 0 25px rgba(99,102,241,0.6);
+}
+
+/* Outline glow */
+
+.btn-outline-land:hover {
+  box-shadow: 0 0 25px rgba(255,255,255,0.2);
+}
+
+/* Admin glow */
+.btn-admin-land:hover {
+  box-shadow: 0 0 25px rgba(168,85,247,0.6);
+}
 /* Stats strip */
 .landing-stats {
   display: flex;
@@ -461,6 +499,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  overflow-y: auto;
 }
 
 .nav-item {
@@ -682,8 +721,147 @@ body {
 .btn:hover { transform: translateY(-2px); }
 .btn:active { transform: translateY(0); }
 
-.btn-primary { background: var(--grad-primary); color: #fff; box-shadow: 0 4px 15px rgba(99,102,241,0.3); }
-.btn-success { background: var(--grad-success); color: #fff; box-shadow: 0 4px 15px rgba(34,197,94,0.3); }
+/* APPLY TO ALL BUTTONS */
+.btn {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* HOVER EFFECT FOR ALL */
+.btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 0 25px rgba(0, 255, 200, 0.6);
+}
+
+/* GLOW LAYER */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+
+  background: linear-gradient(
+          120deg,
+          transparent,
+          rgba(0, 255, 200, 0.5),
+          transparent
+  );
+
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+/* ACTIVATE ANIMATION */
+.btn:hover::before {
+  opacity: 1;
+  animation: glowMove 1.5s linear infinite;
+}
+/* ===== ACCOUNT CARD BASE ===== */
+.account-card {
+  position: relative;
+  border-radius: 18px;
+  padding: 18px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+/* 🔥 HOVER EFFECT (COMMON) */
+.account-card:hover {
+  transform: translateY(-6px) scale(1.02);
+}
+
+/* ===== TYPE BACKGROUNDS ===== */
+.account-card.savings {
+  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.12));
+}
+
+.account-card.current {
+  background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(99,102,241,0.12));
+}
+
+.account-card.business {
+  background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(239,68,68,0.08));
+}
+
+/* ===== TYPE GLOW ON HOVER ===== */
+.account-card.savings:hover {
+  box-shadow: 0 0 30px rgba(6,182,212,0.4);
+}
+
+.account-card.current:hover {
+  box-shadow: 0 0 30px rgba(168,85,247,0.4);
+}
+
+.account-card.business:hover {
+  box-shadow: 0 0 30px rgba(245,158,11,0.4);
+}
+
+/* ===== SHIMMER EFFECT ===== */
+.account-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.06), transparent);
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+/* ✨ shimmer moves on hover */
+.account-card:hover::before {
+  transform: scale(1.2) translate(-10px, 10px);
+}
+
+/* ===== BALANCE HIGHLIGHT ===== */
+.acc-balance {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  transition: all 0.3s ease;
+}
+
+/* 💰 glow balance on hover */
+.account-card:hover .acc-balance {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.4);
+}
+
+/* ===== BADGE ===== */
+.acc-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.12);
+  margin-bottom: 1rem;
+}
+
+/* ===== ACCOUNT NUMBER ===== */
+.acc-number {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 0.25rem;
+}
+
+/* ===== ACTIONS ===== */
+.acc-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* KEYFRAMES */
+@keyframes glowMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 .btn-danger  { background: var(--grad-danger); color: #fff; box-shadow: 0 4px 15px rgba(239,68,68,0.3); }
 .btn-ghost   { background: rgba(255,255,255,0.07); color: var(--text-secondary); border: 1px solid var(--glass-border); }
 .btn-ghost:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
@@ -1259,6 +1437,12 @@ tbody tr:last-child td { border-bottom: none; }
   color: var(--text-primary);
 }
 
+.market-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
 /* ── ENHANCED INVESTMENT PAGE ────────────────────────────────── */
 .invest-summary {
   display: grid;
@@ -1305,47 +1489,62 @@ tbody tr:last-child td { border-bottom: none; }
   margin-bottom: 2rem;
 }
 .bank-invest-card {
-  background: var(--bg-card);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1rem;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 1.4rem 1rem;
   text-align: center;
-  transition: var(--transition);
+  cursor: pointer;
   position: relative;
-  overflow: hidden;
-  cursor: default;
-}
-.bank-invest-card:hover {
-  border-color: rgba(99,102,241,0.4);
-  background: var(--bg-card-hover);
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(99,102,241,0.18);
-}
-.bank-invest-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--grad-primary);
-  opacity: 0;
-  transition: var(--transition);
-}
-.bank-invest-card:hover::before { opacity: 1; }
-.bank-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.2rem;
-}
-.bank-rate {
-  font-size: 0.75rem;
-  color: var(--accent-teal);
-  margin-bottom: 0.85rem;
-  font-weight: 500;
+  transition: 0.35s ease;
 }
 
+.bank-invest-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 20px 50px rgba(99,102,241,0.25);
+}
+
+/* glow */
+.bank-invest-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(99,102,241,0.25), transparent 70%);
+  opacity: 0;
+  transition: 0.4s;
+}
+
+.bank-invest-card:hover::after {
+  opacity: 1;
+}
+
+/* return text */
+.bank-return {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* colors */
+.positive { color: #22c55e; }
+.negative { color: #ef4444; }
+.neutral  { color: #facc15; }
+
+.modal-card {
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+
+
 /* ── MODAL BACKDROP CLOSE ────────────────────────────────────── */
-.modal { cursor: default; }
+.modal {
+  cursor: default;
+  backdrop-filter: blur(6px);
+}
 
 /* ── FORM CARD ───────────────────────────────────────────────── */
 .form-card {
@@ -1424,9 +1623,17 @@ tbody tr:last-child td { border-bottom: none; }
   transition: var(--transition);
 }
 .account-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.25); }
-.account-card.savings  { background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(6,182,212,0.13)); }
-.account-card.current  { background: linear-gradient(135deg, rgba(168,85,247,0.22), rgba(99,102,241,0.13)); }
-.account-card.business { background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(239,68,68,0.10)); }
+.account-card.savings {
+  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.12)) !important;
+}
+
+.account-card.current {
+  background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(99,102,241,0.12)) !important;
+}
+
+.account-card.business {
+  background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(239,68,68,0.08)) !important;
+}
 .account-card::before {
   content: '';
   position: absolute;
@@ -1574,4 +1781,174 @@ tbody tr:last-child td { border-bottom: none; }
   background: rgba(239,68,68,0.1);
   border: 1px solid rgba(239,68,68,0.22);
   border-radius: var(--radius-sm);
+}
+
+.account-card {
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: 0.3s;
+}
+
+.account-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 15px rgba(0,255,150,0.2);
+}
+
+/* ===== MODAL BACKDROP ===== */
+.bond-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* ===== CARD ===== */
+.bond-card {
+  width: 420px;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 0 40px rgba(0, 255, 200, 0.2);
+  border: 1px solid rgba(0,255,200,0.2);
+}
+
+/* ===== HEADER ===== */
+.bond-header {
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 10px;
+}
+
+.bond-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.bond-header p {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* ===== CONTENT ===== */
+.bond-content {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.bond-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+/* ===== HIGHLIGHT ===== */
+.bond-highlight {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0,255,200,0.1);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ===== FOOTER ===== */
+.bond-footer {
+  margin-top: 15px;
+  text-align: center;
+}
+
+/* ===== HIDDEN ===== */
+.hidden {
+  display: none;
+}
+
+/* ===== FD CARD ===== */
+.fd-card {
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 15px;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 0 20px rgba(0,255,200,0.08);
+  transition: 0.3s;
+}
+
+.fd-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px rgba(0,255,200,0.2);
+}
+
+/* HEADER */
+.fd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.fd-header h3 {
+  margin: 0;
+}
+
+/* BODY */
+.fd-body {
+  font-size: 14px;
+}
+
+/* ROW */
+.fd-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+/* HIGHLIGHTS */
+.highlight span:last-child {
+  font-weight: bold;
+  color: #60a5fa;
+}
+
+.highlight-green span:last-child {
+  font-weight: bold;
+  color: #22c55e;
+}
+
+/* ACTIONS */
+.fd-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-modal-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.brand-logo {
+  width: 330px;        /* try 80–120px */
+  height: auto;       /* keeps aspect ratio */
+  margin-bottom: 18px;
+}
+
+.brand-logo {
+
+  filter: drop-shadow(0 0 10px #00f0ff)
+  drop-shadow(0 0 20px #7a5cff);
+
+  transition: transform 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.08);
+}
+.brand-logo {
+  mix-blend-mode: lighten;
 }
