@@ -110,7 +110,7 @@
 
             <!-- Create buttons -->
             <div class="create-btns">
-                <button id="btn-create-savings"  class="btn btn-primary" onclick="createAccountUI('SAVINGS')">
+                <button id="btn-create-savings"  class="btn btn-ghost" onclick="createAccountUI('SAVINGS')">
                     ＋ Savings Account
                 </button>
                 <button id="btn-create-current"  class="btn btn-ghost" onclick="createAccountUI('CURRENT')">
@@ -368,9 +368,16 @@
 
         <!-- ─── INVESTMENTS ─── -->
         <div id="investments" class="section hidden">
+
             <div class="section-header">
-                <h2>📈 Investments</h2>
-                <p>Grow your wealth with BNF partner banks</p>
+                <h2>📈 Investment Market</h2>
+                <p>Dynamic market simulation (test-ready environment)</p>
+            </div>
+
+            <!-- 🔥 MARKET CONTROLS -->
+            <div class="market-controls">
+                <button class="btn btn-sm btn-primary" onclick="toggleMarketMode()">⚡ Risk Mode</button>
+                <button class="btn btn-sm btn-ghost" onclick="triggerMarketCrash()">💥 Crash Market</button>
             </div>
 
             <!-- Summary -->
@@ -380,48 +387,69 @@
                     <div class="invest-stat-value grad-text" id="totalInvested">₹0</div>
                 </div>
                 <div class="invest-stat">
-                    <div class="invest-stat-label">Total Profit</div>
-                    <div class="invest-stat-value" id="totalProfit" style="color: var(--accent-green);">+₹0</div>
+                    <div class="invest-stat-label">Total Profit / Loss</div>
+                    <div class="invest-stat-value" id="totalProfit">₹0</div>
                 </div>
             </div>
 
-            <!-- Bank grid -->
-            <div class="sub-h3">Choose a Bank to Invest</div>
+            <!-- 🔥 LIVE MARKET GRID -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <div class="sub-h3" style="margin-bottom:0;">Live Market (Click any bank)</div>
+                <button class="btn btn-ghost btn-sm" onclick="loadInvestmentCards()">↺ Refresh</button>
+            </div>
             <div id="investmentCards" class="invest-grid"></div>
 
             <div class="divider"></div>
 
+            <!-- PORTFOLIO -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                 <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Portfolio</div>
                 <button class="btn btn-ghost btn-sm" onclick="loadInvestments()">↺ Refresh</button>
             </div>
+
             <div id="invResult"></div>
         </div>
 
-    </main>
-</div>
+        <!-- 🔥 GRAPH MODAL -->
+        <div id="graphModal" class="modal hidden">
+            <div class="modal-card">
+                <button class="modal-close" onclick="closeGraphModal()">✕</button>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
+                <h2 id="graphTitle">Market Performance</h2>
+                <canvas id="bankChart" height="200"></canvas>
 
-<!-- Invest Modal -->
-<div id="investModal" class="modal hidden">
-    <div class="modal-card">
-        <button class="modal-close" onclick="closeInvestModal()">✕</button>
-        <h2 id="investModalTitle">Invest in Bank</h2>
-        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Minimum 1 year lock-in. 12% annual return.</p>
+                <p style="margin-top:1rem;font-weight:600;">
+                    Current Return: <span id="currentReturn"></span>
+                </p>
 
-        <div class="form-field" style="margin-bottom:1rem;">
-            <label>Select Account</label>
-            <select id="investAccountSelect"></select>
+                <button class="btn-modal-submit" onclick="openInvestFromGraph()">Invest Now →</button>
+            </div>
         </div>
-        <div class="form-field" style="margin-bottom:1.25rem;">
-            <label>Investment Amount (₹)</label>
-            <input type="number" id="investAmountInput" placeholder="e.g. 25000">
+
+        <!-- Invest Modal -->
+        <div id="investModal" class="modal hidden">
+            <div class="modal-card">
+                <button class="modal-close" onclick="closeInvestModal()">✕</button>
+
+                <h2 id="investModalTitle">Invest in Bank</h2>
+                <p class="form-sub" id="dynamicReturnText" style="margin-top:0.25rem;margin-bottom:1.5rem;">
+                    Dynamic return based on market performance
+                </p>
+
+                <div class="form-field" style="margin-bottom:1rem;">
+                    <label>Select Account</label>
+                    <select id="investAccountSelect"></select>
+                </div>
+
+                <div class="form-field" style="margin-bottom:1.25rem;">
+                    <label>Investment Amount (₹)</label>
+                    <input type="number" id="investAmountInput" placeholder="e.g. 25000">
+                </div>
+
+                <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm Investment →</button>
+            </div>
         </div>
-        <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm Investment →</button>
-    </div>
-</div>
+
 
 <!-- Loan Pay Modal -->
 <div id="loanPayModal" class="modal hidden">
@@ -439,20 +467,22 @@
 </div>
 
 <!-- Withdraw Investment Modal -->
-<div id="withdrawInvModal" class="modal hidden">
-    <div class="modal-card">
-        <button class="modal-close" onclick="closeWithdrawInvModal()">✕</button>
-        <h2>Withdraw Investment</h2>
-        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Funds will be transferred to your selected account.</p>
-        <input type="hidden" id="currentInvestmentId">
-        <div class="form-field" style="margin-bottom:1.25rem;">
-            <label>Receive to Account</label>
-            <select id="withdrawInvAccountSelect"></select>
-        </div>
-        <button id="btn-withdraw-inv-confirm" class="btn-modal-submit" onclick="confirmWithdrawInv()">Withdraw →</button>
-    </div>
-</div>
+        <div id="withdrawModal" class="modal hidden">
+            <div class="modal-card">
+                <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
 
+                <h2>Withdraw Investment</h2>
+
+                <div class="form-field" style="margin-bottom:1rem;">
+                    <label>Select Account</label>
+                    <select id="withdrawAccountSelect"></select>
+                </div>
+
+                <button class="btn-modal-submit" onclick="confirmWithdraw()">
+                    Confirm Withdraw →
+                </button>
+            </div>
+        </div>
 <script src="script.js"></script>
 
 <div id="bondModal" class="bond-modal hidden">
@@ -471,6 +501,7 @@
 
     </div>
 </div>
-
+        <div id="toast-container"></div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
