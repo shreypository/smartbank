@@ -98,55 +98,252 @@ function login() {
         });
 }
 
-function register() {
-    const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const msgEl = document.getElementById('message');
-    const btn = document.getElementById('btn-register-submit');
+// ─────────────────────────────────────────────────────────────
+//  REGISTRATION WIZARD — STEP NAVIGATION
+// ─────────────────────────────────────────────────────────────
 
-    if (!name || !email || !password) {
-        msgEl.innerText = '⚠️ Please fill in all fields.';
-        return;
+function regNext(step) {
+    const msgEl = document.getElementById('message');
+    msgEl.innerText = '';
+
+    if (step === 1) {
+        const firstName = document.getElementById('reg-firstName').value.trim();
+        const lastName  = document.getElementById('reg-lastName').value.trim();
+        const dob       = document.getElementById('reg-dob').value;
+        const gender    = document.getElementById('reg-gender').value;
+
+        if (!firstName) { msgEl.innerText = '⚠️ First Name is required.'; return; }
+        if (!/^[A-Za-z\s'-]{1,50}$/.test(firstName)) { msgEl.innerText = '⚠️ First Name must contain only letters.'; return; }
+        if (!lastName)  { msgEl.innerText = '⚠️ Last Name is required.'; return; }
+        if (!/^[A-Za-z\s'-]{1,50}$/.test(lastName))  { msgEl.innerText = '⚠️ Last Name must contain only letters.'; return; }
+        if (!dob)       { msgEl.innerText = '⚠️ Date of Birth is required.'; return; }
+        const dobDate = new Date(dob);
+        const today   = new Date();
+        if (dobDate >= today) { msgEl.innerText = '⚠️ Date of Birth cannot be today or a future date.'; return; }
+        const age = Math.floor((today - dobDate) / (365.25 * 24 * 60 * 60 * 1000));
+        if (age < 18) { msgEl.innerText = `⚠️ You must be at least 18 years old to register. Your age: ${age}`; return; }
+        if (!gender)    { msgEl.innerText = '⚠️ Please select your gender.'; return; }
     }
+
+    if (step === 2) {
+        const email   = document.getElementById('regEmail').value.trim();
+        const phone   = document.getElementById('reg-phone').value.trim();
+        const altPh   = document.getElementById('reg-altPhone').value.trim();
+        const addr1   = document.getElementById('reg-addr1').value.trim();
+        const city    = document.getElementById('reg-city').value.trim();
+        const state   = document.getElementById('reg-state').value;
+        const pincode = document.getElementById('reg-pincode').value.trim();
+
+        if (!email)              { msgEl.innerText = '⚠️ Email address is required.'; return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msgEl.innerText = '⚠️ Please enter a valid email address.'; return; }
+        if (!phone)              { msgEl.innerText = '⚠️ Mobile number is required.'; return; }
+        if (!/^\d{10}$/.test(phone)) { msgEl.innerText = '⚠️ Mobile number must be exactly 10 digits.'; return; }
+        if (altPh && !/^\d{10}$/.test(altPh)) { msgEl.innerText = '⚠️ Alternate phone must be exactly 10 digits.'; return; }
+        if (altPh && altPh === phone) { msgEl.innerText = '⚠️ Alternate phone cannot be the same as primary mobile number.'; return; }
+        if (!addr1)              { msgEl.innerText = '⚠️ Address Line 1 is required.'; return; }
+        if (!city)               { msgEl.innerText = '⚠️ City is required.'; return; }
+        if (!state)              { msgEl.innerText = '⚠️ Please select your state.'; return; }
+        if (!pincode)            { msgEl.innerText = '⚠️ Pincode is required.'; return; }
+        if (!/^\d{6}$/.test(pincode)) { msgEl.innerText = '⚠️ Pincode must be exactly 6 digits.'; return; }
+    }
+
+    if (step === 3) {
+        const pan      = document.getElementById('reg-pan').value.trim().toUpperCase();
+        const aadhar   = document.getElementById('reg-aadhar').value.trim();
+        const occ      = document.getElementById('reg-occupation').value;
+        const empType  = document.getElementById('reg-employmentType').value;
+        const income   = document.getElementById('reg-income').value;
+
+        if (!pan)   { msgEl.innerText = '⚠️ PAN number is required.'; return; }
+        if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { msgEl.innerText = '⚠️ Invalid PAN format. Expected: ABCDE1234F (5 letters, 4 digits, 1 letter).'; return; }
+        if (!aadhar) { msgEl.innerText = '⚠️ Aadhar number is required.'; return; }
+        if (!/^\d{12}$/.test(aadhar)) { msgEl.innerText = '⚠️ Aadhar number must be exactly 12 digits.'; return; }
+        if (!occ)   { msgEl.innerText = '⚠️ Please select your occupation.'; return; }
+        if (!empType) { msgEl.innerText = '⚠️ Please select employment type.'; return; }
+        if (!income || Number(income) < 0) { msgEl.innerText = '⚠️ Annual income is required and cannot be negative.'; return; }
+        if (Number(income) === 0 && (occ === 'SALARIED' || occ === 'BUSINESS')) {
+            msgEl.innerText = '⚠️ Annual income cannot be ₹0 for Salaried or Business occupation.'; return;
+        }
+        // Set PAN to uppercase
+        document.getElementById('reg-pan').value = pan;
+    }
+
+    // Advance to next step
+    document.getElementById(`reg-panel-${step}`).classList.add('hidden');
+    document.getElementById(`reg-panel-${step + 1}`).classList.remove('hidden');
+    regSetStep(step + 1);
+    msgEl.innerText = '';
+    // Scroll modal to top
+    const mc = document.querySelector('.modal-card');
+    if (mc) mc.scrollTop = 0;
+}
+
+function regBack(step) {
+    document.getElementById(`reg-panel-${step}`).classList.add('hidden');
+    document.getElementById(`reg-panel-${step - 1}`).classList.remove('hidden');
+    regSetStep(step - 1);
+    document.getElementById('message').innerText = '';
+    const mc = document.querySelector('.modal-card');
+    if (mc) mc.scrollTop = 0;
+}
+
+function regSetStep(active) {
+    for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById(`reg-step-dot-${i}`);
+        if (!dot) continue;
+        dot.classList.toggle('active', i === active);
+        dot.classList.toggle('done', i < active);
+    }
+}
+
+function toggleEmployer() {
+    const occ = document.getElementById('reg-occupation').value;
+    const row = document.getElementById('employerRow');
+    if (!row) return;
+    const needsEmployer = ['SALARIED', 'BUSINESS', 'SELF_EMPLOYED'].includes(occ);
+    row.style.display = needsEmployer ? 'flex' : 'none';
+    row.querySelector('input').placeholder = occ === 'BUSINESS'
+        ? 'Business / Company Name *'
+        : occ === 'SELF_EMPLOYED'
+            ? 'Organisation / Client Name (optional)'
+            : 'Employer Name *';
+}
+
+function updatePwdStrength() {
+    const pwd = document.getElementById('regPassword').value;
+    const fill  = document.getElementById('pwd-strength-fill');
+    const label = document.getElementById('pwd-strength-label');
+    if (!fill || !label) return;
+
+    let score = 0;
+    if (pwd.length >= 8)              score++;
+    if (pwd.length >= 12)             score++;
+    if (/[A-Z]/.test(pwd))           score++;
+    if (/[0-9]/.test(pwd))           score++;
+    if (/[^A-Za-z0-9]/.test(pwd))   score++;
+
+    const levels = [
+        { pct: '0%',   color: 'transparent',                        text: '' },
+        { pct: '25%',  color: '#ef4444',                             text: '🔴 Very Weak' },
+        { pct: '50%',  color: '#f97316',                             text: '🟠 Weak' },
+        { pct: '65%',  color: '#eab308',                             text: '🟡 Fair' },
+        { pct: '82%',  color: '#22c55e',                             text: '🟢 Strong' },
+        { pct: '100%', color: '#16a34a',                             text: '💚 Very Strong' }
+    ];
+    const lvl = levels[score] || levels[0];
+    fill.style.width           = lvl.pct;
+    fill.style.backgroundColor = lvl.color;
+    label.innerText            = lvl.text;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  REGISTER — Final Submit (Step 4)
+// ─────────────────────────────────────────────────────────────
+function register() {
+    const msgEl = document.getElementById('message');
+    const btn   = document.getElementById('btn-register-submit');
+
+    // ── Step 4 validations ────────────────────────────────────
+    const nomineeName     = document.getElementById('reg-nomineeName').value.trim();
+    const nomineeRelation = document.getElementById('reg-nomineeRelation').value;
+    const nomineeDob      = document.getElementById('reg-nomineeDob').value;
+    const nomineePhone    = document.getElementById('reg-nomineePhone').value.trim();
+    const secQ            = document.getElementById('reg-secQ').value;
+    const secA            = document.getElementById('reg-secA').value.trim();
+    const password        = document.getElementById('regPassword').value;
+    const confirmPwd      = document.getElementById('reg-confirmPassword').value;
+    const termsAccepted   = document.getElementById('reg-terms').checked;
+    const marketing       = document.getElementById('reg-marketing').checked;
+
+    if (!nomineeName)     { msgEl.innerText = '⚠️ Nominee full name is required.'; return; }
+    if (!nomineeRelation) { msgEl.innerText = '⚠️ Please select nominee relationship.'; return; }
+    if (!nomineeDob)      { msgEl.innerText = '⚠️ Nominee date of birth is required.'; return; }
+    if (nomineePhone && !/^\d{10}$/.test(nomineePhone)) { msgEl.innerText = '⚠️ Nominee phone must be exactly 10 digits.'; return; }
+    if (!secQ)            { msgEl.innerText = '⚠️ Please select a security question.'; return; }
+    if (!secA)            { msgEl.innerText = '⚠️ Security answer is required.'; return; }
+    if (!password)        { msgEl.innerText = '⚠️ Password is required.'; return; }
+    if (password.length < 8) { msgEl.innerText = '⚠️ Password must be at least 8 characters long.'; return; }
+    if (!/[A-Z]/.test(password)) { msgEl.innerText = '⚠️ Password must contain at least one uppercase letter.'; return; }
+    if (!/[0-9]/.test(password)) { msgEl.innerText = '⚠️ Password must contain at least one number.'; return; }
+    if (password !== confirmPwd) { msgEl.innerText = '⚠️ Passwords do not match. Please re-enter.'; return; }
+    if (!termsAccepted)   { msgEl.innerText = '⚠️ You must accept the Terms & Conditions to continue.'; return; }
+
+    // ── Collect all fields ────────────────────────────────────
+    const payload = {
+        firstName:           document.getElementById('reg-firstName').value.trim(),
+        lastName:            document.getElementById('reg-lastName').value.trim(),
+        dateOfBirth:         document.getElementById('reg-dob').value,
+        gender:              document.getElementById('reg-gender').value,
+        nationality:         document.getElementById('reg-nationality').value,
+        email:               document.getElementById('regEmail').value.trim(),
+        phone:               document.getElementById('reg-phone').value.trim(),
+        alternatePhone:      document.getElementById('reg-altPhone').value.trim() || null,
+        addressLine1:        document.getElementById('reg-addr1').value.trim(),
+        addressLine2:        document.getElementById('reg-addr2').value.trim() || null,
+        city:                document.getElementById('reg-city').value.trim(),
+        state:               document.getElementById('reg-state').value,
+        pincode:             document.getElementById('reg-pincode').value.trim(),
+        country:             document.getElementById('reg-country').value,
+        panNumber:           document.getElementById('reg-pan').value.trim().toUpperCase(),
+        aadharNumber:        document.getElementById('reg-aadhar').value.trim(),
+        occupation:          document.getElementById('reg-occupation').value,
+        employerName:        document.getElementById('reg-employer').value.trim() || null,
+        employmentType:      document.getElementById('reg-employmentType').value,
+        annualIncome:        Number(document.getElementById('reg-income').value) || 0,
+        preferredAccountType: document.getElementById('reg-acctType').value,
+        nomineeName,
+        nomineeRelation,
+        nomineeDob,
+        nomineePhone:        nomineePhone || null,
+        securityQuestion:    secQ,
+        securityAnswer:      secA,
+        password,
+        termsAccepted,
+        marketingConsent:    marketing
+    };
 
     setLoading(btn, true);
     msgEl.innerText = '';
 
     fetch('/users/register', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role: 'USER' })
+        body:    JSON.stringify(payload)
     })
-        .then(res => res.text())
-        .then(data => {
-            setLoading(btn, false);
-            // Auto-login after registration
+    .then(res => res.json())
+    .then(data => {
+        setLoading(btn, false);
+        if (data.status === 'success') {
+            showToast('🎉 ' + data.message, 'success');
+            // Auto-login
             fetch('/users/login', {
-                method: 'POST',
+                method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body:    JSON.stringify({ email: payload.email, password: payload.password })
             })
-                .then(r => r.json())
-                .then(loginData => {
-                    if (loginData.userCode) {
-                        localStorage.setItem('userCode', loginData.userCode);
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        msgEl.innerText = '✅ ' + data + ' — Please sign in.';
-                        switchTab('login');
-                    }
-                })
-                .catch(() => {
-                    msgEl.innerText = '✅ ' + data + ' — Please sign in.';
+            .then(r => r.json())
+            .then(loginData => {
+                if (loginData.userCode) {
+                    localStorage.setItem('userCode', loginData.userCode);
+                    localStorage.setItem('accountCode', loginData.userCode);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    msgEl.innerText = '✅ Account created! Please sign in.';
                     switchTab('login');
-                });
-        })
-        .catch(err => {
-            setLoading(btn, false);
-            msgEl.innerText = '❌ Registration failed. Please try again.';
-            console.error(err);
-        });
+                }
+            })
+            .catch(() => { msgEl.innerText = '✅ Account created! Please sign in.'; switchTab('login'); });
+        } else {
+            // Backend validation error — highlight with field info if present
+            const fieldHint = data.field ? ` (Field: ${data.field})` : '';
+            msgEl.innerText = '❌ ' + data.message + fieldHint;
+        }
+    })
+    .catch(err => {
+        setLoading(btn, false);
+        msgEl.innerText = '❌ Registration failed. Please try again.';
+        console.error(err);
+    });
 }
 
 function adminLogin() {

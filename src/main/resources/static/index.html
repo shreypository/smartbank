@@ -91,24 +91,311 @@
             <button id="btn-login-submit" class="btn-modal-submit" onclick="login()">Sign In →</button>
         </div>
 
-        <!-- REGISTER -->
+        <!-- REGISTER — 4-step KYC Wizard -->
         <div id="registerForm" class="form hidden">
-            <h2>Create Account</h2>
-            <p class="form-sub">Open your BugBank account in seconds</p>
 
-            <div class="input-group">
-                <span class="input-icon">👤</span>
-                <input type="text" id="name" placeholder="Full name">
+            <!-- Progress Bar -->
+            <div class="reg-progress-wrap">
+                <div class="reg-steps">
+                    <div class="reg-step active" id="reg-step-dot-1">
+                        <div class="reg-step-circle">1</div>
+                        <div class="reg-step-label">Personal</div>
+                    </div>
+                    <div class="reg-step-line"></div>
+                    <div class="reg-step" id="reg-step-dot-2">
+                        <div class="reg-step-circle">2</div>
+                        <div class="reg-step-label">Contact</div>
+                    </div>
+                    <div class="reg-step-line"></div>
+                    <div class="reg-step" id="reg-step-dot-3">
+                        <div class="reg-step-circle">3</div>
+                        <div class="reg-step-label">Identity</div>
+                    </div>
+                    <div class="reg-step-line"></div>
+                    <div class="reg-step" id="reg-step-dot-4">
+                        <div class="reg-step-circle">4</div>
+                        <div class="reg-step-label">Nominee</div>
+                    </div>
+                </div>
             </div>
-            <div class="input-group">
-                <span class="input-icon">📧</span>
-                <input type="email" id="regEmail" placeholder="Email address">
+
+            <!-- ─── STEP 1: Personal Info ─── -->
+            <div class="reg-panel" id="reg-panel-1">
+                <h2>Personal Information</h2>
+                <p class="form-sub">Tell us about yourself</p>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="reg-firstName" placeholder="First Name *" autocomplete="given-name">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="reg-lastName" placeholder="Last Name *" autocomplete="family-name">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">🎂</span>
+                    <input type="date" id="reg-dob" placeholder="Date of Birth *" max="">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">⚧</span>
+                    <select id="reg-gender">
+                        <option value="">Select Gender *</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other / Prefer not to say</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">🌏</span>
+                    <select id="reg-nationality">
+                        <option value="Indian">Indian</option>
+                        <option value="NRI">NRI (Non-Resident Indian)</option>
+                        <option value="Foreign National">Foreign National</option>
+                    </select>
+                </div>
+
+                <div class="reg-nav">
+                    <span></span>
+                    <button class="btn-modal-submit" id="reg-next-1" onclick="regNext(1)">Next →</button>
+                </div>
             </div>
-            <div class="input-group">
-                <span class="input-icon">🔒</span>
-                <input type="password" id="regPassword" placeholder="Create password">
+
+            <!-- ─── STEP 2: Contact & Address ─── -->
+            <div class="reg-panel hidden" id="reg-panel-2">
+                <h2>Contact &amp; Address</h2>
+                <p class="form-sub">How can we reach you?</p>
+
+                <div class="input-group">
+                    <span class="input-icon">📧</span>
+                    <input type="email" id="regEmail" placeholder="Email Address *" autocomplete="email">
+                </div>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">📱</span>
+                        <input type="tel" id="reg-phone" placeholder="Mobile Number * (10 digits)" maxlength="10">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">📞</span>
+                        <input type="tel" id="reg-altPhone" placeholder="Alternate Phone (optional)" maxlength="10">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">🏠</span>
+                    <input type="text" id="reg-addr1" placeholder="Address Line 1 * (House No., Street)" autocomplete="address-line1">
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🏘</span>
+                    <input type="text" id="reg-addr2" placeholder="Address Line 2 (Area, Landmark)" autocomplete="address-line2">
+                </div>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">🏙</span>
+                        <input type="text" id="reg-city" placeholder="City *">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">🗺</span>
+                        <select id="reg-state">
+                            <option value="">State *</option>
+                            <option>Andhra Pradesh</option><option>Arunachal Pradesh</option>
+                            <option>Assam</option><option>Bihar</option><option>Chhattisgarh</option>
+                            <option>Goa</option><option>Gujarat</option><option>Haryana</option>
+                            <option>Himachal Pradesh</option><option>Jharkhand</option>
+                            <option>Karnataka</option><option>Kerala</option>
+                            <option>Madhya Pradesh</option><option>Maharashtra</option>
+                            <option>Manipur</option><option>Meghalaya</option><option>Mizoram</option>
+                            <option>Nagaland</option><option>Odisha</option><option>Punjab</option>
+                            <option>Rajasthan</option><option>Sikkim</option>
+                            <option>Tamil Nadu</option><option>Telangana</option>
+                            <option>Tripura</option><option>Uttar Pradesh</option>
+                            <option>Uttarakhand</option><option>West Bengal</option>
+                            <option>Delhi</option><option>Jammu &amp; Kashmir</option>
+                            <option>Ladakh</option><option>Puducherry</option>
+                            <option>Chandigarh</option><option>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">📮</span>
+                        <input type="text" id="reg-pincode" placeholder="Pincode * (6 digits)" maxlength="6">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">🌐</span>
+                        <select id="reg-country">
+                            <option value="India">India</option>
+                            <option value="USA">USA</option>
+                            <option value="UK">UK</option>
+                            <option value="UAE">UAE</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="reg-nav">
+                    <button class="btn-outline-reg" onclick="regBack(2)">← Back</button>
+                    <button class="btn-modal-submit" id="reg-next-2" onclick="regNext(2)">Next →</button>
+                </div>
             </div>
-            <button id="btn-register-submit" class="btn-modal-submit" onclick="register()">Create Account →</button>
+
+            <!-- ─── STEP 3: Identity & Financial ─── -->
+            <div class="reg-panel hidden" id="reg-panel-3">
+                <h2>Identity &amp; Financial</h2>
+                <p class="form-sub">KYC &amp; employment details</p>
+
+                <div class="input-group">
+                    <span class="input-icon">🪪</span>
+                    <input type="text" id="reg-pan" placeholder="PAN Number * (e.g. ABCDE1234F)" maxlength="10" style="text-transform:uppercase">
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">🔢</span>
+                    <input type="text" id="reg-aadhar" placeholder="Aadhar Number * (12 digits)" maxlength="12">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">💼</span>
+                    <select id="reg-occupation" onchange="toggleEmployer()">
+                        <option value="">Occupation *</option>
+                        <option value="SALARIED">Salaried Employee</option>
+                        <option value="SELF_EMPLOYED">Self Employed / Freelancer</option>
+                        <option value="BUSINESS">Business Owner</option>
+                        <option value="STUDENT">Student</option>
+                        <option value="RETIRED">Retired</option>
+                        <option value="HOMEMAKER">Homemaker</option>
+                    </select>
+                </div>
+
+                <div class="input-group" id="employerRow">
+                    <span class="input-icon">🏢</span>
+                    <input type="text" id="reg-employer" placeholder="Employer / Organisation Name">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">⏱</span>
+                    <select id="reg-employmentType">
+                        <option value="">Employment Type *</option>
+                        <option value="FULL_TIME">Full-Time</option>
+                        <option value="PART_TIME">Part-Time</option>
+                        <option value="CONTRACT">Contract / Consultant</option>
+                        <option value="SELF">Self / None</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">💰</span>
+                    <input type="number" id="reg-income" placeholder="Annual Income (₹) *" min="0">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">🏦</span>
+                    <select id="reg-acctType">
+                        <option value="SAVINGS">Preferred Account: Savings</option>
+                        <option value="CURRENT">Preferred Account: Current</option>
+                        <option value="BUSINESS">Preferred Account: Business</option>
+                    </select>
+                </div>
+
+                <div class="reg-nav">
+                    <button class="btn-outline-reg" onclick="regBack(3)">← Back</button>
+                    <button class="btn-modal-submit" id="reg-next-3" onclick="regNext(3)">Next →</button>
+                </div>
+            </div>
+
+            <!-- ─── STEP 4: Nominee, Security & Submit ─── -->
+            <div class="reg-panel hidden" id="reg-panel-4">
+                <h2>Nominee &amp; Security</h2>
+                <p class="form-sub">Almost there! Set up your account security</p>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">👨‍👩‍👧</span>
+                        <input type="text" id="reg-nomineeName" placeholder="Nominee Full Name *">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">🤝</span>
+                        <select id="reg-nomineeRelation">
+                            <option value="">Relationship *</option>
+                            <option value="SPOUSE">Spouse</option>
+                            <option value="PARENT">Parent</option>
+                            <option value="CHILD">Child</option>
+                            <option value="SIBLING">Sibling</option>
+                            <option value="FRIEND">Friend</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="reg-row">
+                    <div class="input-group">
+                        <span class="input-icon">🎂</span>
+                        <input type="date" id="reg-nomineeDob" placeholder="Nominee Date of Birth *">
+                    </div>
+                    <div class="input-group">
+                        <span class="input-icon">📱</span>
+                        <input type="tel" id="reg-nomineePhone" placeholder="Nominee Phone (optional)" maxlength="10">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">❓</span>
+                    <select id="reg-secQ">
+                        <option value="">Security Question *</option>
+                        <option value="What is the name of your first pet?">What is the name of your first pet?</option>
+                        <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                        <option value="What city were you born in?">What city were you born in?</option>
+                        <option value="What was the name of your first school?">What was the name of your first school?</option>
+                        <option value="What is your favourite movie?">What is your favourite movie?</option>
+                        <option value="What is your childhood nickname?">What is your childhood nickname?</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <span class="input-icon">💬</span>
+                    <input type="text" id="reg-secA" placeholder="Security Answer *">
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="regPassword" placeholder="Create Password * (min 8 chars)" autocomplete="new-password" oninput="updatePwdStrength()">
+                </div>
+                <div id="pwd-strength-bar" style="height:4px;border-radius:4px;margin:-12px 0 12px 0;background:#e2e8f0;transition:all 0.3s;">
+                    <div id="pwd-strength-fill" style="height:100%;border-radius:4px;width:0%;transition:all 0.3s;"></div>
+                </div>
+                <div id="pwd-strength-label" style="font-size:0.72rem;color:var(--text-muted);margin:-8px 0 8px 0;text-align:right;"></div>
+
+                <div class="input-group">
+                    <span class="input-icon">🔐</span>
+                    <input type="password" id="reg-confirmPassword" placeholder="Confirm Password *" autocomplete="new-password">
+                </div>
+
+                <div class="reg-checkbox-row">
+                    <input type="checkbox" id="reg-terms">
+                    <label for="reg-terms">I agree to the <a href="#" onclick="return false;" style="color:var(--accent);">Terms &amp; Conditions</a> and <a href="#" onclick="return false;" style="color:var(--accent);">Privacy Policy</a> *</label>
+                </div>
+                <div class="reg-checkbox-row">
+                    <input type="checkbox" id="reg-marketing">
+                    <label for="reg-marketing">I consent to receive promotional offers, updates, and financial tips from BugBank</label>
+                </div>
+
+                <div class="reg-nav">
+                    <button class="btn-outline-reg" onclick="regBack(4)">← Back</button>
+                    <button class="btn-modal-submit" id="btn-register-submit" onclick="register()">🏦 Open Account →</button>
+                </div>
+            </div>
+
+            <!-- hidden legacy full-name field for compat -->
+            <input type="hidden" id="name" value="">
+
+            <p id="message"></p>
         </div>
 
         <!-- ADMIN -->
