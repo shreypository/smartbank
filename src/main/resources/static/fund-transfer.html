@@ -1,370 +1,802 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BugBank — Fund Transfer Wizard</title>
-  <meta name="description" content="BugBank multi-step fund transfer wizard — covering multi-step forms, explicit wait, OTP verification, and new-tab receipt.">
+  <meta name="description"
+    content="BugBank multi-step fund transfer wizard — covering multi-step forms, explicit wait, OTP verification, and new-tab receipt.">
   <link rel="stylesheet" href="style.css">
   <style>
-    .ft-wrap{max-width:720px;margin:0 auto;padding:2rem 1.5rem;}
-    .ft-header{text-align:center;padding:2rem 0 1.5rem;}
-    .ft-header h1{font-size:1.9rem;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0 0 .4rem;}
-    .ft-header p{color:var(--text-muted);font-size:.9rem;margin:0;}
+    .ft-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .ft-header {
+      text-align: center;
+      padding: 2rem 0 1.5rem;
+    }
+
+    .ft-header h1 {
+      font-size: 1.9rem;
+      background: var(--grad-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0 0 .4rem;
+    }
+
+    .ft-header p {
+      color: var(--text-muted);
+      font-size: .9rem;
+      margin: 0;
+    }
 
     /* Stepper */
-    .stepper{display:flex;align-items:center;margin-bottom:2.5rem;position:relative;}
-    .step-item{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;}
-    .step-item:not(:last-child)::after{content:'';position:absolute;top:18px;left:60%;width:80%;height:2px;background:var(--border);z-index:0;}
-    .step-item.completed:not(:last-child)::after{background:var(--accent-indigo);}
-    .step-bubble{width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:var(--text-muted);z-index:1;position:relative;transition:.3s;}
-    .step-item.active .step-bubble{background:var(--accent-indigo);border-color:var(--accent-indigo);color:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.2);}
-    .step-item.completed .step-bubble{background:#4ade80;border-color:#4ade80;color:#fff;}
-    .step-label{font-size:.7rem;color:var(--text-muted);margin-top:.4rem;text-align:center;font-weight:600;}
-    .step-item.active .step-label{color:var(--accent-indigo);}
-    .step-item.completed .step-label{color:#4ade80;}
+    .stepper {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 60%;
+      width: 80%;
+      height: 2px;
+      background: var(--border);
+      z-index: 0;
+    }
+
+    .step-item.completed:not(:last-child)::after {
+      background: var(--accent-indigo);
+    }
+
+    .step-bubble {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      z-index: 1;
+      position: relative;
+      transition: .3s;
+    }
+
+    .step-item.active .step-bubble {
+      background: var(--accent-indigo);
+      border-color: var(--accent-indigo);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, .2);
+    }
+
+    .step-item.completed .step-bubble {
+      background: #4ade80;
+      border-color: #4ade80;
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: .7rem;
+      color: var(--text-muted);
+      margin-top: .4rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .step-item.active .step-label {
+      color: var(--accent-indigo);
+    }
+
+    .step-item.completed .step-label {
+      color: #4ade80;
+    }
 
     /* Cards */
-    .ft-card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1rem;}
-    .ft-card h2{font-size:1.15rem;margin:0 0 1.5rem;color:var(--text-primary);}
-    .ft-actions{display:flex;gap:.75rem;margin-top:1.75rem;justify-content:space-between;}
-    .verify-row{display:flex;gap:.75rem;align-items:flex-end;}
-    .verify-row .form-field{flex:1;margin:0;}
-    .recipient-chip{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.2rem;display:flex;align-items:center;gap:.75rem;margin-top:.75rem;}
-    .recipient-avatar{width:38px;height:38px;border-radius:50%;background:var(--accent-indigo);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1rem;}
-    .summary-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.9rem;}
-    .summary-row:last-child{border-bottom:none;font-weight:700;font-size:1rem;}
-    .otp-inputs{display:flex;gap:.6rem;justify-content:center;margin:1.25rem 0;}
-    .otp-digit{width:50px;height:58px;text-align:center;font-size:1.5rem;font-weight:700;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text-primary);transition:.2s;}
-    .otp-digit:focus{border-color:var(--accent-indigo);outline:none;box-shadow:0 0 0 3px rgba(99,102,241,.2);}
-    .otp-hint{text-align:center;font-size:.8rem;color:var(--text-muted);}
-    .receipt-wrap{text-align:center;padding:1rem 0;}
-    .receipt-icon{font-size:4rem;margin-bottom:.75rem;}
-    .receipt-title{font-size:1.5rem;font-weight:800;color:#4ade80;margin-bottom:.5rem;}
-    .receipt-sub{color:var(--text-muted);font-size:.9rem;margin-bottom:1.5rem;}
-    .receipt-details{background:var(--surface-2);border-radius:12px;padding:1.25rem;text-align:left;margin-bottom:1.5rem;}
-    .amount-display{font-size:2.5rem;font-weight:800;background:var(--grad-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:1rem 0;}
+    .ft-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .ft-card h2 {
+      font-size: 1.15rem;
+      margin: 0 0 1.5rem;
+      color: var(--text-primary);
+    }
+
+    .ft-actions {
+      display: flex;
+      gap: .75rem;
+      margin-top: 1.75rem;
+      justify-content: space-between;
+    }
+
+    .verify-row {
+      display: flex;
+      gap: .75rem;
+      align-items: flex-end;
+    }
+
+    .verify-row .form-field {
+      flex: 1;
+      margin: 0;
+    }
+
+    .recipient-chip {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .9rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-top: .75rem;
+    }
+
+    .recipient-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--accent-indigo);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: .6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+
+    .summary-row:last-child {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .otp-inputs {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      margin: 1.25rem 0;
+    }
+
+    .otp-digit {
+      width: 50px;
+      height: 58px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text-primary);
+      transition: .2s;
+    }
+
+    .otp-digit:focus {
+      border-color: var(--accent-indigo);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, .2);
+    }
+
+    .otp-hint {
+      text-align: center;
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+
+    .receipt-wrap {
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .receipt-icon {
+      font-size: 4rem;
+      margin-bottom: .75rem;
+    }
+
+    .receipt-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #4ade80;
+      margin-bottom: .5rem;
+    }
+
+    .receipt-sub {
+      color: var(--text-muted);
+      font-size: .9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .receipt-details {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .amount-display {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: var(--grad-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 1rem 0;
+    }
+
+    /* Transfer Types & Extras */
+    #schedule-container {
+      margin-top: .75rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+      border: 1px dashed var(--glass-border);
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: .25rem;
+    }
   </style>
 </head>
+
 <body>
 
-<div class="ft-wrap">
-  <div class="ft-header">
-    <h1>↔️ Fund Transfer</h1>
-    <p>Secure multi-step transfer wizard — <a href="dashboard.html" style="color:var(--accent-indigo);">← Back to Dashboard</a></p>
-  </div>
-
-  <!-- Stepper -->
-  <div class="stepper" id="stepper">
-    <div class="step-item active" id="step-item-1"><div class="step-bubble">1</div><span class="step-label">From Account</span></div>
-    <div class="step-item" id="step-item-2"><div class="step-bubble">2</div><span class="step-label">Recipient</span></div>
-    <div class="step-item" id="step-item-3"><div class="step-bubble">3</div><span class="step-label">Amount</span></div>
-    <div class="step-item" id="step-item-4"><div class="step-bubble">4</div><span class="step-label">OTP</span></div>
-    <div class="step-item" id="step-item-5"><div class="step-bubble">5</div><span class="step-label">Receipt</span></div>
-  </div>
-
-  <!-- ─── STEP 1: From Account ─── -->
-  <div id="step-panel-1" class="ft-card">
-    <h2>🏦 Step 1: Select Source Account</h2>
-    <div class="form-field">
-      <label>From Account</label>
-      <select id="ft-from-account" name="fromAccount">
-        <option value="">-- Select your account --</option>
-      </select>
+  <div class="ft-wrap">
+    <div class="ft-header">
+      <h1>↔️ Fund Transfer</h1>
+      <p>Secure multi-step transfer wizard — <a href="dashboard.html" style="color:var(--accent-indigo);">← Back to
+          Dashboard</a></p>
     </div>
-    <div class="form-field" style="margin-top:1rem;">
-      <label>Transfer Purpose</label>
-      <select id="ft-purpose" name="purpose">
-        <option value="personal">Personal</option>
-        <option value="business">Business</option>
-        <option value="family">Family Support</option>
-        <option value="loan">Loan Repayment</option>
-        <option value="investment">Investment</option>
-      </select>
-    </div>
-    <div class="ft-actions">
-      <span></span>
-      <button id="btn-step1-next" class="btn btn-primary" onclick="goStep(2)">Next → Recipient</button>
-    </div>
-  </div>
 
-  <!-- ─── STEP 2: Recipient ─── -->
-  <div id="step-panel-2" class="ft-card" style="display:none;">
-    <h2>👤 Step 2: Enter Recipient Account</h2>
-    <div class="verify-row">
+    <!-- Stepper -->
+    <div class="stepper" id="stepper">
+      <div class="step-item active" id="step-item-1">
+        <div class="step-bubble">1</div><span class="step-label">From Account</span>
+      </div>
+      <div class="step-item" id="step-item-2">
+        <div class="step-bubble">2</div><span class="step-label">Recipient</span>
+      </div>
+      <div class="step-item" id="step-item-3">
+        <div class="step-bubble">3</div><span class="step-label">Amount</span>
+      </div>
+      <div class="step-item" id="step-item-4">
+        <div class="step-bubble">4</div><span class="step-label">OTP</span>
+      </div>
+      <div class="step-item" id="step-item-5">
+        <div class="step-bubble">5</div><span class="step-label">Receipt</span>
+      </div>
+    </div>
+
+    <!-- ─── STEP 1: From Account ─── -->
+    <div id="step-panel-1" class="ft-card">
+      <h2>🏦 Step 1: Select Source Account</h2>
       <div class="form-field">
-        <label>Recipient Account Number</label>
-        <input type="text" id="ft-recipient-account" name="recipientAccount" placeholder="e.g. 100012345678">
+        <label>From Account</label>
+        <select id="ft-from-account" name="fromAccount">
+          <option value="">-- Select your account --</option>
+        </select>
       </div>
-      <button id="btn-verify-recipient" class="btn btn-ghost" onclick="verifyRecipient()">Verify</button>
-    </div>
-    <div id="verify-spinner" style="display:none;margin-top:.75rem;color:var(--text-muted);font-size:.85rem;">⏳ Verifying recipient… (explicit wait)</div>
-    <div id="recipient-chip" style="display:none;" class="recipient-chip">
-      <div class="recipient-avatar" id="recipient-avatar">R</div>
-      <div>
-        <div id="recipient-name" style="font-weight:700;font-size:.95rem;"></div>
-        <div id="recipient-bank" style="font-size:.78rem;color:var(--text-muted);"></div>
+      <div class="form-field" style="margin-top:1rem;">
+        <label>Transfer Purpose</label>
+        <select id="ft-purpose" name="purpose">
+          <option value="personal">Personal</option>
+          <option value="business">Business</option>
+          <option value="family">Family Support</option>
+          <option value="loan">Loan Repayment</option>
+          <option value="investment">Investment</option>
+        </select>
       </div>
-      <span class="badge badge-success" style="margin-left:auto;">✓ Verified</span>
+      <div class="ft-actions">
+        <span></span>
+        <button id="btn-step1-next" class="btn btn-primary" onclick="goStep(2)">Next → Recipient</button>
+      </div>
     </div>
-    <div id="recipient-error" style="display:none;color:#f87171;font-size:.85rem;margin-top:.75rem;"></div>
-    <div class="ft-actions">
-      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
-      <button id="btn-step2-next" class="btn btn-primary" onclick="goStep(3)" disabled>Next → Amount</button>
+
+    <!-- ─── STEP 2: Recipient ─── -->
+    <div id="step-panel-2" class="ft-card" style="display:none;">
+      <h2>👤 Step 2: Enter Recipient Account</h2>
+      <div class="verify-row">
+        <div class="form-field">
+          <label>Recipient Account Number</label>
+          <input type="text" id="ft-recipient-account" name="recipientAccount" placeholder="e.g. 100012345678">
+        </div>
+        <button id="btn-verify-recipient" class="btn btn-ghost" onclick="verifyRecipient()">Verify</button>
+      </div>
+      <div id="verify-spinner" style="display:none;margin-top:.75rem;color:var(--text-muted);font-size:.85rem;">⏳
+        Verifying recipient… (explicit wait)</div>
+      <div id="recipient-chip" style="display:none;" class="recipient-chip">
+        <div class="recipient-avatar" id="recipient-avatar">R</div>
+        <div>
+          <div id="recipient-name" style="font-weight:700;font-size:.95rem;"></div>
+          <div id="recipient-bank" style="font-size:.78rem;color:var(--text-muted);"></div>
+        </div>
+        <span class="badge badge-success" style="margin-left:auto;">✓ Verified</span>
+      </div>
+
+      <!-- Beneficiary Extra Details -->
+      <div id="beneficiary-extras"
+        style="display:none;margin-top:1.5rem;background:var(--surface-2);padding:1.25rem;border-radius:12px;border:1px dashed var(--border);">
+        <div class="form-field" style="margin:0;">
+          <label>Beneficiary Nickname</label>
+          <input type="text" id="ft-nickname" name="nickname" placeholder="e.g. Landlord, Mom, Office">
+        </div>
+        <label class="radio-lbl" style="margin-top:1rem;">
+          <input type="checkbox" id="ft-save-payee" checked> Save this recipient to my payees
+        </label>
+      </div>
+
+      <div id="recipient-error" style="display:none;color:#f87171;font-size:.85rem;margin-top:.75rem;"></div>
+      <div class="ft-actions">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+        <button id="btn-step2-next" class="btn btn-primary" onclick="goStep(3)" disabled>Next → Amount</button>
+      </div>
     </div>
+
+    <!-- ─── STEP 3: Amount ─── -->
+    <div id="step-panel-3" class="ft-card" style="display:none;">
+      <h2>💰 Step 3: Amount & Details</h2>
+
+      <div class="form-field">
+        <label>Transfer Type</label>
+        <div class="type-grid">
+          <div class="type-card selected" onclick="selectTransferType('IMPS')" id="type-IMPS">
+            <div class="type-name">IMPS</div>
+            <div class="type-desc">Instant 24x7<br>Max ₹5 Lakhs<br>Fee: ₹5 + GST</div>
+          </div>
+          <div class="type-card" onclick="selectTransferType('NEFT')" id="type-NEFT">
+            <div class="type-name">NEFT</div>
+            <div class="type-desc">Settles in 2-3 hrs<br>No limit<br>Fee: Free</div>
+          </div>
+          <div class="type-card" onclick="selectTransferType('RTGS')" id="type-RTGS">
+            <div class="type-name">RTGS</div>
+            <div class="type-desc">Real-time<br>Min ₹2 Lakhs<br>Fee: Free</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-field" style="margin-top:1.5rem;">
+        <label>Transfer Amount (₹)</label>
+        <input type="number" id="ft-amount" name="transferAmount" placeholder="e.g. 5000" min="1"
+          oninput="validateAmountLimit()">
+        <div id="type-limit-warn" style="color:#facc15;font-size:.85rem;margin-top:.5rem;display:none;"></div>
+      </div>
+
+      <div class="form-field" style="margin-top:1rem;">
+        <label>Schedule Transfer</label>
+        <div class="schedule-toggle">
+          <label class="radio-lbl"><input type="radio" name="schedToggle" value="now" onclick="toggleSchedule(false)"
+              checked> Transfer Now</label>
+          <label class="radio-lbl"><input type="radio" name="schedToggle" value="later" onclick="toggleSchedule(true)">
+            Schedule for Later</label>
+        </div>
+        <div id="schedule-container" style="display:none;">
+          <label style="font-size:.85rem;margin-bottom:.4rem;display:block;color:var(--text-secondary);">Select Date &
+            Time</label>
+          <input type="datetime-local" id="ft-schedule-date"
+            style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);padding:.5rem;width:100%;box-sizing:border-box;color-scheme:dark;">
+        </div>
+      </div>
+
+      <div class="form-field" style="margin-top:1rem;">
+        <label>Remarks/Description (optional)</label>
+        <textarea id="ft-note" name="transferNote" rows="3" placeholder="e.g. Monthly rent payment" maxlength="150"
+          oninput="updateCharCount(this)"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:.6rem .75rem;font-family:inherit;font-size:.9rem;box-sizing:border-box;resize:vertical;"></textarea>
+        <div class="char-count"><span id="note-chars">0</span> / 150</div>
+      </div>
+
+      <div class="form-field" style="margin-top:1rem;">
+        <label>Category Tags (multi-select, hold Ctrl)</label>
+        <select id="ft-categories" name="categories" multiple
+          style="height:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:.4rem;width:100%;">
+          <option value="rent">Rent</option>
+          <option value="grocery">Grocery</option>
+          <option value="medical">Medical</option>
+          <option value="travel">Travel</option>
+          <option value="emi">EMI</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div id="amount-error" style="color:#f87171;font-size:.85rem;margin-top:.5rem;display:none;"></div>
+      <div class="ft-actions">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+        <button id="btn-step3-next" class="btn btn-primary" onclick="validateAndGoStep4()">Review & Confirm →</button>
+      </div>
+    </div>
+
+    <!-- ─── STEP 4: Confirm + OTP ─── -->
+    <div id="step-panel-4" class="ft-card" style="display:none;">
+      <h2>🔐 Step 4: Confirm & OTP Verification</h2>
+
+      <!-- Summary -->
+      <div class="receipt-details" id="transfer-summary">
+        <div class="summary-row"><span>From Account</span><span id="sum-from">—</span></div>
+        <div class="summary-row"><span>To Account</span><span id="sum-to">—</span></div>
+        <div class="summary-row"><span>Recipient</span><span id="sum-recipient">—</span></div>
+        <div class="summary-row" id="row-nickname" style="display:none;"><span>Nickname</span><span
+            id="sum-nickname">—</span></div>
+
+        <div class="summary-row" style="margin-top:.5rem;border-top:1px dashed var(--border);padding-top:.8rem;">
+          <span>Transfer Type</span><span id="sum-type" style="font-weight:700;">IMPS</span>
+        </div>
+        <div class="summary-row"><span>Timing</span><span id="sum-timing">—</span></div>
+        <div class="summary-row"><span>Scheduled For</span><span id="sum-schedule">—</span></div>
+
+        <div class="summary-row" style="margin-top:.5rem;border-top:1px dashed var(--border);padding-top:.8rem;">
+          <span>Purpose</span><span id="sum-purpose">—</span>
+        </div>
+        <div class="summary-row"><span>Remarks</span><span id="sum-note">—</span></div>
+        <div class="summary-row" style="color:var(--text-muted);"><span>Transfer Fee</span><span id="sum-fee">₹0</span>
+        </div>
+        <div class="summary-row" style="border-top:2px solid var(--border);padding-top:.8rem;margin-top:.4rem;">
+          <span>Total Amount Deducted</span><span id="sum-amount"
+            style="color:var(--accent-indigo);font-size:1.1rem;font-weight:800;">—</span>
+        </div>
+      </div>
+
+      <!-- OTP -->
+      <div style="margin-top:1.25rem;">
+        <div style="font-size:.9rem;color:var(--text-secondary);margin-bottom:.5rem;text-align:center;">Enter the
+          6-digit OTP sent to your registered mobile</div>
+        <div class="otp-inputs">
+          <input type="text" class="otp-digit" id="otp-1" maxlength="1" oninput="otpNext(this, 'otp-2')"
+            data-testid="otp-digit-1">
+          <input type="text" class="otp-digit" id="otp-2" maxlength="1" oninput="otpNext(this, 'otp-3')"
+            data-testid="otp-digit-2">
+          <input type="text" class="otp-digit" id="otp-3" maxlength="1" oninput="otpNext(this, 'otp-4')"
+            data-testid="otp-digit-3">
+          <input type="text" class="otp-digit" id="otp-4" maxlength="1" oninput="otpNext(this, 'otp-5')"
+            data-testid="otp-digit-4">
+          <input type="text" class="otp-digit" id="otp-5" maxlength="1" oninput="otpNext(this, 'otp-6')"
+            data-testid="otp-digit-5">
+          <input type="text" class="otp-digit" id="otp-6" maxlength="1" data-testid="otp-digit-6">
+        </div>
+        <div class="otp-hint">Test OTP: <strong>1 2 3 4 5 6</strong> &nbsp;|&nbsp; <a href="#" id="btn-resend-otp"
+            onclick="resendOtp(event)" style="color:var(--accent-indigo);">Resend OTP</a></div>
+        <div id="otp-error" style="color:#f87171;font-size:.85rem;text-align:center;margin-top:.5rem;display:none;">
+        </div>
+      </div>
+
+      <div class="ft-actions">
+        <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+        <button id="btn-submit-transfer" class="btn btn-primary" onclick="submitTransfer()">✅ Confirm Transfer</button>
+      </div>
+    </div>
+
+    <!-- ─── STEP 5: Receipt ─── -->
+    <div id="step-panel-5" class="ft-card" style="display:none;">
+      <div class="receipt-wrap">
+        <div class="receipt-icon">🎉</div>
+        <div class="receipt-title">Transfer Successful!</div>
+        <div class="receipt-sub">Your funds have been transferred securely.</div>
+        <div class="amount-display" id="receipt-amount">₹0</div>
+        <div class="receipt-details" id="receipt-details">
+          <div class="summary-row"><span>Transaction ID</span><span id="receipt-txn-id"
+              style="font-family:monospace;">—</span></div>
+          <div class="summary-row"><span>Transfer Type</span><span id="receipt-type">—</span></div>
+          <div class="summary-row"><span>To Account</span><span id="receipt-to">—</span></div>
+          <div class="summary-row"><span>Recipient</span><span id="receipt-recipient">—</span></div>
+          <div class="summary-row" id="row-receipt-nick" style="display:none;"><span>Nickname</span><span
+              id="receipt-nick">—</span></div>
+          <div class="summary-row"><span>Fee Charged</span><span id="receipt-fee">—</span></div>
+          <div class="summary-row"><span>Status</span><span id="receipt-status"
+              class="badge badge-success">SUCCESS</span></div>
+          <div class="summary-row"><span>Date/Time</span><span id="receipt-datetime">—</span></div>
+        </div>
+        <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
+          <button id="btn-open-receipt-tab" class="btn btn-primary" onclick="openReceiptTab()">📄 Open Receipt in New
+            Tab</button>
+          <button id="btn-new-transfer" class="btn btn-ghost" onclick="resetWizard()">↩ New Transfer</button>
+          <a href="dashboard.html" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;">🏦
+            Dashboard</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container"></div>
   </div>
 
-  <!-- ─── STEP 3: Amount ─── -->
-  <div id="step-panel-3" class="ft-card" style="display:none;">
-    <h2>💰 Step 3: Amount & Details</h2>
-    <div class="form-field">
-      <label>Transfer Amount (₹)</label>
-      <input type="number" id="ft-amount" name="transferAmount" placeholder="e.g. 5000" min="1">
-    </div>
-    <div class="form-field" style="margin-top:1rem;">
-      <label>Note (optional)</label>
-      <textarea id="ft-note" name="transferNote" rows="3" placeholder="e.g. Monthly rent payment" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:.6rem .75rem;font-family:inherit;font-size:.9rem;box-sizing:border-box;resize:vertical;"></textarea>
-    </div>
-    <div class="form-field" style="margin-top:1rem;">
-      <label>Category Tags (multi-select, hold Ctrl)</label>
-      <select id="ft-categories" name="categories" multiple style="height:100px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);padding:.4rem;width:100%;">
-        <option value="rent">Rent</option>
-        <option value="grocery">Grocery</option>
-        <option value="medical">Medical</option>
-        <option value="travel">Travel</option>
-        <option value="emi">EMI</option>
-        <option value="other">Other</option>
-      </select>
-    </div>
-    <div id="amount-error" style="color:#f87171;font-size:.85rem;margin-top:.5rem;display:none;"></div>
-    <div class="ft-actions">
-      <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
-      <button id="btn-step3-next" class="btn btn-primary" onclick="validateAndGoStep4()">Review & Confirm →</button>
-    </div>
-  </div>
+  <script src="script.js"></script>
+  <script>
+    let ftState = { fromAccount: '', fromAccountLabel: '', recipient: null, nickname: '', savePayee: true, amount: 0, note: '', purpose: '', txnId: '', trnType: 'IMPS', isScheduled: false, scheduleDate: '', fee: 5 };
+    let currentStep = 1;
 
-  <!-- ─── STEP 4: Confirm + OTP ─── -->
-  <div id="step-panel-4" class="ft-card" style="display:none;">
-    <h2>🔐 Step 4: Confirm & OTP Verification</h2>
+    function selectTransferType(type) {
+      ftState.trnType = type;
+      document.querySelectorAll('.type-card').forEach(el => el.classList.remove('selected'));
+      document.getElementById('type-' + type).classList.add('selected');
+      validateAmountLimit();
+    }
 
-    <!-- Summary -->
-    <div class="receipt-details" id="transfer-summary">
-      <div class="summary-row"><span>From Account</span><span id="sum-from">—</span></div>
-      <div class="summary-row"><span>To Account</span><span id="sum-to">—</span></div>
-      <div class="summary-row"><span>Recipient</span><span id="sum-recipient">—</span></div>
-      <div class="summary-row"><span>Purpose</span><span id="sum-purpose">—</span></div>
-      <div class="summary-row"><span>Note</span><span id="sum-note">—</span></div>
-      <div class="summary-row"><span>Total Amount</span><span id="sum-amount" style="color:var(--accent-indigo);">—</span></div>
-    </div>
+    function validateAmountLimit() {
+      const amt = parseFloat(document.getElementById('ft-amount').value) || 0;
+      const warn = document.getElementById('type-limit-warn');
+      let msg = '';
 
-    <!-- OTP -->
-    <div style="margin-top:1.25rem;">
-      <div style="font-size:.9rem;color:var(--text-secondary);margin-bottom:.5rem;text-align:center;">Enter the 6-digit OTP sent to your registered mobile</div>
-      <div class="otp-inputs">
-        <input type="text" class="otp-digit" id="otp-1" maxlength="1" oninput="otpNext(this, 'otp-2')" data-testid="otp-digit-1">
-        <input type="text" class="otp-digit" id="otp-2" maxlength="1" oninput="otpNext(this, 'otp-3')" data-testid="otp-digit-2">
-        <input type="text" class="otp-digit" id="otp-3" maxlength="1" oninput="otpNext(this, 'otp-4')" data-testid="otp-digit-3">
-        <input type="text" class="otp-digit" id="otp-4" maxlength="1" oninput="otpNext(this, 'otp-5')" data-testid="otp-digit-4">
-        <input type="text" class="otp-digit" id="otp-5" maxlength="1" oninput="otpNext(this, 'otp-6')" data-testid="otp-digit-5">
-        <input type="text" class="otp-digit" id="otp-6" maxlength="1" data-testid="otp-digit-6">
-      </div>
-      <div class="otp-hint">Test OTP: <strong>1 2 3 4 5 6</strong> &nbsp;|&nbsp; <a href="#" id="btn-resend-otp" onclick="resendOtp(event)" style="color:var(--accent-indigo);">Resend OTP</a></div>
-      <div id="otp-error" style="color:#f87171;font-size:.85rem;text-align:center;margin-top:.5rem;display:none;"></div>
-    </div>
-
-    <div class="ft-actions">
-      <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
-      <button id="btn-submit-transfer" class="btn btn-primary" onclick="submitTransfer()">✅ Confirm Transfer</button>
-    </div>
-  </div>
-
-  <!-- ─── STEP 5: Receipt ─── -->
-  <div id="step-panel-5" class="ft-card" style="display:none;">
-    <div class="receipt-wrap">
-      <div class="receipt-icon">🎉</div>
-      <div class="receipt-title">Transfer Successful!</div>
-      <div class="receipt-sub">Your funds have been transferred securely.</div>
-      <div class="amount-display" id="receipt-amount">₹0</div>
-      <div class="receipt-details" id="receipt-details">
-        <div class="summary-row"><span>Transaction ID</span><span id="receipt-txn-id" style="font-family:monospace;">—</span></div>
-        <div class="summary-row"><span>To Account</span><span id="receipt-to">—</span></div>
-        <div class="summary-row"><span>Recipient</span><span id="receipt-recipient">—</span></div>
-        <div class="summary-row"><span>Status</span><span class="badge badge-success">SUCCESS</span></div>
-        <div class="summary-row"><span>Date & Time</span><span id="receipt-datetime">—</span></div>
-      </div>
-      <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;">
-        <button id="btn-open-receipt-tab" class="btn btn-primary" onclick="openReceiptTab()">📄 Open Receipt in New Tab</button>
-        <button id="btn-new-transfer" class="btn btn-ghost" onclick="resetWizard()">↩ New Transfer</button>
-        <a href="dashboard.html" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;">🏦 Dashboard</a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div id="toast-container"></div>
-</div>
-
-<script src="script.js"></script>
-<script>
-let ftState = { fromAccount: '', fromAccountLabel: '', recipient: null, amount: 0, note: '', purpose: '', txnId: '' };
-let currentStep = 1;
-
-// Load accounts
-window.addEventListener('load', () => {
-  const uc = localStorage.getItem('userCode');
-  if (!uc) return;
-  fetch(`/accounts/user?userCode=${uc}`)
-    .then(r => r.json())
-    .then(data => {
-      const sel = document.getElementById('ft-from-account');
-      sel.innerHTML = '<option value="">-- Select your account --</option>' +
-        data.map(a => `<option value="${a.id}" data-label="${a.accountType} — ${a.accountNumber} (₹${a.balance})">${a.accountType} — ${a.accountNumber} (₹${Number(a.balance).toLocaleString('en-IN')})</option>`).join('');
-    });
-});
-
-function goStep(n) {
-  if (n === 2 && !document.getElementById('ft-from-account').value) {
-    showToast('Please select a source account', 'warning'); return;
-  }
-  document.getElementById('step-panel-' + currentStep).style.display = 'none';
-  document.getElementById('step-panel-' + n).style.display = 'block';
-  ['step-item-1','step-item-2','step-item-3','step-item-4','step-item-5'].forEach((id, i) => {
-    const el = document.getElementById(id);
-    el.classList.remove('active','completed');
-    if (i + 1 < n) el.classList.add('completed');
-    else if (i + 1 === n) el.classList.add('active');
-  });
-  currentStep = n;
-  if (n === 2 && !ftState.otpFetched) { fetchOtp(); ftState.otpFetched = true; }
-}
-
-function fetchOtp() {
-  fetch('/test/otp').then(r => r.json()).then(d => { ftState.expectedOtp = d.otp; });
-}
-
-function verifyRecipient() {
-  const acc = document.getElementById('ft-recipient-account').value.trim();
-  if (!acc) { document.getElementById('recipient-error').style.display='block'; document.getElementById('recipient-error').innerText='Enter an account number'; return; }
-  document.getElementById('verify-spinner').style.display = 'block';
-  document.getElementById('recipient-chip').style.display = 'none';
-  document.getElementById('recipient-error').style.display = 'none';
-  document.getElementById('btn-verify-recipient').disabled = true;
-  fetch(`/test/verify-recipient?accountNumber=${acc}`)
-    .then(r => r.json())
-    .then(d => {
-      document.getElementById('verify-spinner').style.display = 'none';
-      document.getElementById('btn-verify-recipient').disabled = false;
-      if (d.found) {
-        ftState.recipient = d;
-        document.getElementById('recipient-name').innerText = d.recipientName;
-        document.getElementById('recipient-bank').innerText = d.bankName + ' | ' + d.accountNumber;
-        document.getElementById('recipient-avatar').innerText = d.recipientName.charAt(0);
-        document.getElementById('recipient-chip').style.display = 'flex';
-        document.getElementById('btn-step2-next').disabled = false;
-      } else {
-        document.getElementById('recipient-error').style.display = 'block';
-        document.getElementById('recipient-error').innerText = '❌ Account not found. Use a 6+ digit number.';
-        document.getElementById('btn-step2-next').disabled = true;
-        ftState.recipient = null;
+      if (ftState.trnType === 'IMPS' && amt > 500000) {
+        msg = '⚠ IMPS limit is ₹5,00,000. Try NEFT or RTGS.';
+      } else if (ftState.trnType === 'RTGS' && amt > 0 && amt < 200000) {
+        msg = '⚠ RTGS minimum is ₹2,00,000. Try IMPS or NEFT.';
       }
-    })
-    .catch(() => {
-      document.getElementById('verify-spinner').style.display = 'none';
-      document.getElementById('btn-verify-recipient').disabled = false;
-      showToast('Verification failed', 'error');
+
+      if (msg) { warn.style.display = 'block'; warn.innerText = msg; }
+      else { warn.style.display = 'none'; }
+    }
+
+    function toggleSchedule(isLater) {
+      ftState.isScheduled = isLater;
+      document.getElementById('schedule-container').style.display = isLater ? 'block' : 'none';
+    }
+
+    function updateCharCount(el) {
+      document.getElementById('note-chars').innerText = el.value.length;
+    }
+
+    // Load accounts
+    window.addEventListener('load', () => {
+      const uc = localStorage.getItem('userCode');
+      if (!uc) return;
+      fetch(`/accounts/user?userCode=${uc}`)
+        .then(r => r.json())
+        .then(data => {
+          const sel = document.getElementById('ft-from-account');
+          sel.innerHTML = '<option value="">-- Select your account --</option>' +
+            data.map(a => `<option value="${a.id}" data-label="${a.accountType} — ${a.accountNumber} (₹${a.balance})">${a.accountType} — ${a.accountNumber} (₹${Number(a.balance).toLocaleString('en-IN')})</option>`).join('');
+        });
     });
-}
 
-function validateAndGoStep4() {
-  const amt = parseFloat(document.getElementById('ft-amount').value);
-  if (!amt || amt <= 0) {
-    document.getElementById('amount-error').style.display = 'block';
-    document.getElementById('amount-error').innerText = 'Please enter a valid amount greater than 0';
-    return;
-  }
-  document.getElementById('amount-error').style.display = 'none';
-  ftState.amount = amt;
-  ftState.note = document.getElementById('ft-note').value;
-  ftState.purpose = document.getElementById('ft-purpose').value;
-  const selOpt = document.getElementById('ft-from-account').selectedOptions[0];
-  ftState.fromAccountLabel = selOpt ? selOpt.text : '';
-  ftState.fromAccount = document.getElementById('ft-from-account').value;
-
-  document.getElementById('sum-from').innerText = ftState.fromAccountLabel;
-  document.getElementById('sum-to').innerText = ftState.recipient?.accountNumber || '—';
-  document.getElementById('sum-recipient').innerText = ftState.recipient?.recipientName || '—';
-  document.getElementById('sum-purpose').innerText = ftState.purpose;
-  document.getElementById('sum-note').innerText = ftState.note || '—';
-  document.getElementById('sum-amount').innerText = '₹' + Number(amt).toLocaleString('en-IN');
-  goStep(4);
-}
-
-function otpNext(el, nextId) {
-  el.value = el.value.replace(/\D/,'');
-  if (el.value && nextId) document.getElementById(nextId)?.focus();
-}
-
-function resendOtp(e) {
-  e.preventDefault();
-  fetch('/test/otp').then(r=>r.json()).then(d => { ftState.expectedOtp = d.otp; showToast('OTP resent! (use: 123456)', 'info'); });
-}
-
-function submitTransfer() {
-  const otp = ['otp-1','otp-2','otp-3','otp-4','otp-5','otp-6'].map(id => document.getElementById(id).value).join('');
-  const btn = document.getElementById('btn-submit-transfer');
-  if (otp.length < 6) {
-    document.getElementById('otp-error').style.display='block';
-    document.getElementById('otp-error').innerText='⚠ Enter all 6 OTP digits';
-    return;
-  }
-  btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Verifying…';
-  fetch(`/test/verify-otp?otp=${otp}`, { method:'POST' })
-    .then(r => r.json())
-    .then(d => {
-      if (d.valid) {
-        ftState.txnId = 'TXN' + Date.now();
-        document.getElementById('receipt-amount').innerText = '₹' + Number(ftState.amount).toLocaleString('en-IN');
-        document.getElementById('receipt-txn-id').innerText = ftState.txnId;
-        document.getElementById('receipt-to').innerText = ftState.recipient?.accountNumber || '—';
-        document.getElementById('receipt-recipient').innerText = ftState.recipient?.recipientName || '—';
-        document.getElementById('receipt-datetime').innerText = new Date().toLocaleString('en-IN');
-        goStep(5);
-      } else {
-        document.getElementById('otp-error').style.display='block';
-        document.getElementById('otp-error').innerText = '❌ ' + d.message;
-        btn.disabled=false; btn.innerHTML='✅ Confirm Transfer';
+    function goStep(n) {
+      if (n === 2 && !document.getElementById('ft-from-account').value) {
+        showToast('Please select a source account', 'warning'); return;
       }
-    })
-    .catch(() => { btn.disabled=false; btn.innerHTML='✅ Confirm Transfer'; showToast('OTP verification failed','error'); });
-}
+      document.getElementById('step-panel-' + currentStep).style.display = 'none';
+      document.getElementById('step-panel-' + n).style.display = 'block';
+      ['step-item-1', 'step-item-2', 'step-item-3', 'step-item-4', 'step-item-5'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'completed');
+        if (i + 1 < n) el.classList.add('completed');
+        else if (i + 1 === n) el.classList.add('active');
+      });
+      currentStep = n;
+      if (n === 2 && !ftState.otpFetched) { fetchOtp(); ftState.otpFetched = true; }
+    }
 
-function openReceiptTab() {
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Transfer Receipt — BugBank</title>
+    function fetchOtp() {
+      fetch('/test/otp').then(r => r.json()).then(d => { ftState.expectedOtp = d.otp; });
+    }
+
+    function verifyRecipient() {
+      const acc = document.getElementById('ft-recipient-account').value.trim();
+      if (!acc) { document.getElementById('recipient-error').style.display = 'block'; document.getElementById('recipient-error').innerText = 'Enter an account number'; return; }
+      document.getElementById('verify-spinner').style.display = 'block';
+      document.getElementById('recipient-chip').style.display = 'none';
+      document.getElementById('recipient-error').style.display = 'none';
+      document.getElementById('btn-verify-recipient').disabled = true;
+      fetch(`/test/verify-recipient?accountNumber=${acc}`)
+        .then(r => r.json())
+        .then(d => {
+          document.getElementById('verify-spinner').style.display = 'none';
+          document.getElementById('btn-verify-recipient').disabled = false;
+          if (d.found) {
+            ftState.recipient = d;
+            document.getElementById('recipient-name').innerText = d.recipientName;
+            document.getElementById('recipient-bank').innerText = d.bankName + ' | ' + d.accountNumber;
+            document.getElementById('recipient-avatar').innerText = d.recipientName.charAt(0);
+            document.getElementById('recipient-chip').style.display = 'flex';
+            document.getElementById('beneficiary-extras').style.display = 'block';
+            document.getElementById('btn-step2-next').disabled = false;
+          } else {
+            document.getElementById('recipient-error').style.display = 'block';
+            document.getElementById('recipient-error').innerText = '❌ Account not found. Use a 6+ digit number.';
+            document.getElementById('btn-step2-next').disabled = true;
+            document.getElementById('beneficiary-extras').style.display = 'none';
+            ftState.recipient = null;
+          }
+        })
+        .catch(() => {
+          document.getElementById('verify-spinner').style.display = 'none';
+          document.getElementById('btn-verify-recipient').disabled = false;
+          showToast('Verification failed', 'error');
+        });
+    }
+
+    function validateAndGoStep4() {
+      const amt = parseFloat(document.getElementById('ft-amount').value);
+      if (!amt || amt <= 0) {
+        document.getElementById('amount-error').style.display = 'block';
+        document.getElementById('amount-error').innerText = 'Please enter a valid amount greater than 0';
+        return;
+      }
+
+      // Validation for limits
+      if (ftState.trnType === 'IMPS' && amt > 500000) {
+        showToast('IMPS limit is ₹5,00,000. Please change type or amount.', 'error'); return;
+      }
+      if (ftState.trnType === 'RTGS' && amt < 200000) {
+        showToast('RTGS minimum is ₹2,00,000. Please change type or amount.', 'error'); return;
+      }
+
+      if (ftState.isScheduled) {
+        const sDate = document.getElementById('ft-schedule-date').value;
+        if (!sDate) { showToast('Please select a schedule date', 'error'); return; }
+        if (new Date(sDate) <= new Date()) { showToast('Schedule date must be in the future', 'error'); return; }
+        ftState.scheduleDate = new Date(sDate).toLocaleString('en-IN');
+      } else {
+        ftState.scheduleDate = 'Immediate';
+      }
+
+      document.getElementById('amount-error').style.display = 'none';
+      ftState.amount = amt;
+      ftState.note = document.getElementById('ft-note').value;
+      ftState.purpose = document.getElementById('ft-purpose').value;
+
+      ftState.nickname = document.getElementById('ft-nickname').value.trim();
+      ftState.savePayee = document.getElementById('ft-save-payee').checked;
+
+      const hfee = ftState.trnType === 'IMPS' ? 5 : 0;
+      ftState.fee = hfee;
+
+      const selOpt = document.getElementById('ft-from-account').selectedOptions[0];
+      ftState.fromAccountLabel = selOpt ? selOpt.text : '';
+      ftState.fromAccount = document.getElementById('ft-from-account').value;
+
+      document.getElementById('sum-from').innerText = ftState.fromAccountLabel;
+      document.getElementById('sum-to').innerText = ftState.recipient?.accountNumber || '—';
+      document.getElementById('sum-recipient').innerText = ftState.recipient?.recipientName || '—';
+
+      if (ftState.nickname) {
+        document.getElementById('row-nickname').style.display = 'flex';
+        document.getElementById('sum-nickname').innerText = ftState.nickname;
+      } else {
+        document.getElementById('row-nickname').style.display = 'none';
+      }
+
+      document.getElementById('sum-type').innerText = ftState.trnType;
+      let timing = 'Instant (24x7)';
+      if (ftState.trnType === 'NEFT') timing = '2-3 Hours (Working Days)';
+      if (ftState.trnType === 'RTGS') timing = 'Real-time (Working Hours)';
+      document.getElementById('sum-timing').innerText = timing;
+      document.getElementById('sum-schedule').innerText = ftState.scheduleDate;
+
+      document.getElementById('sum-purpose').innerText = ftState.purpose;
+      document.getElementById('sum-note').innerText = ftState.note || '—';
+
+      document.getElementById('sum-fee').innerText = hfee > 0 ? '₹' + hfee + ' + GST' : 'Free';
+      const totalDeducted = amt + hfee * 1.18;
+      document.getElementById('sum-amount').innerText = '₹' + Number(totalDeducted.toFixed(2)).toLocaleString('en-IN');
+      goStep(4);
+    }
+
+    function otpNext(el, nextId) {
+      el.value = el.value.replace(/\D/, '');
+      if (el.value && nextId) document.getElementById(nextId)?.focus();
+    }
+
+    function resendOtp(e) {
+      e.preventDefault();
+      fetch('/test/otp').then(r => r.json()).then(d => { ftState.expectedOtp = d.otp; showToast('OTP resent! (use: 123456)', 'info'); });
+    }
+
+    function submitTransfer() {
+      const otp = ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6'].map(id => document.getElementById(id).value).join('');
+      const btn = document.getElementById('btn-submit-transfer');
+      if (otp.length < 6) {
+        document.getElementById('otp-error').style.display = 'block';
+        document.getElementById('otp-error').innerText = '⚠ Enter all 6 OTP digits';
+        return;
+      }
+      btn.disabled = true; btn.innerHTML = '<span class="btn-spinner"></span> Verifying…';
+      fetch(`/test/verify-otp?otp=${otp}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+          if (d.valid) {
+            ftState.txnId = 'TXN' + Date.now();
+            document.getElementById('receipt-amount').innerText = '₹' + Number((ftState.amount + ftState.fee * 1.18).toFixed(2)).toLocaleString('en-IN');
+            document.getElementById('receipt-txn-id').innerText = ftState.txnId;
+            document.getElementById('receipt-type').innerText = ftState.trnType;
+            document.getElementById('receipt-to').innerText = ftState.recipient?.accountNumber || '—';
+            document.getElementById('receipt-recipient').innerText = ftState.recipient?.recipientName || '—';
+            if (ftState.nickname) {
+              document.getElementById('row-receipt-nick').style.display = 'flex';
+              document.getElementById('receipt-nick').innerText = ftState.nickname;
+            } else {
+              document.getElementById('row-receipt-nick').style.display = 'none';
+            }
+            document.getElementById('receipt-fee').innerText = ftState.fee > 0 ? '₹' + ftState.fee + ' + GST' : 'Free';
+
+            let statusHtml = ftState.isScheduled ? '<span class="badge" style="background:#fbbf24;color:#000;">SCHEDULED</span>' : '<span class="badge badge-success">SUCCESS</span>';
+            document.getElementById('receipt-status').innerHTML = statusHtml;
+            document.getElementById('receipt-datetime').innerText = ftState.isScheduled ? ftState.scheduleDate : new Date().toLocaleString('en-IN');
+            goStep(5);
+          } else {
+            document.getElementById('otp-error').style.display = 'block';
+            document.getElementById('otp-error').innerText = '❌ ' + d.message;
+            btn.disabled = false; btn.innerHTML = '✅ Confirm Transfer';
+          }
+        })
+        .catch(() => { btn.disabled = false; btn.innerHTML = '✅ Confirm Transfer'; showToast('OTP verification failed', 'error'); });
+    }
+
+    function openReceiptTab() {
+      let statColor = ftState.isScheduled ? '#fbbf24' : '#4ade80';
+      let statTxt = ftState.isScheduled ? 'SCHEDULED' : 'SUCCESS';
+      let amtTotal = ftState.amount + (ftState.fee * 1.18);
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Transfer Receipt — BugBank</title>
   <style>body{font-family:sans-serif;max-width:500px;margin:40px auto;padding:2rem;background:#0f0f1a;color:#e2e8f0;border-radius:16px;}
-  h1{color:#4ade80;text-align:center;} table{width:100%;border-collapse:collapse;} td{padding:.6rem 1rem;border-bottom:1px solid #2d3748;}
+  h1{color:${statColor};text-align:center;} table{width:100%;border-collapse:collapse;} td{padding:.6rem 1rem;border-bottom:1px solid #2d3748;}
   .amt{font-size:2rem;font-weight:800;text-align:center;color:#6366f1;margin:1rem 0;}
   </style></head><body>
   <h1>✅ BugBank Transfer Receipt</h1>
-  <div class="amt">₹${Number(ftState.amount).toLocaleString('en-IN')}</div>
+  <div class="amt">₹${Number(amtTotal.toFixed(2)).toLocaleString('en-IN')}</div>
   <table>
   <tr><td>Transaction ID</td><td>${ftState.txnId}</td></tr>
+  <tr><td>Mode</td><td>${ftState.trnType}</td></tr>
   <tr><td>From</td><td>${ftState.fromAccountLabel}</td></tr>
   <tr><td>To Account</td><td>${ftState.recipient?.accountNumber}</td></tr>
-  <tr><td>Recipient</td><td>${ftState.recipient?.recipientName}</td></tr>
-  <tr><td>Date</td><td>${new Date().toLocaleString('en-IN')}</td></tr>
-  <tr><td>Status</td><td style="color:#4ade80;font-weight:700;">SUCCESS</td></tr>
+  <tr><td>Recipient</td><td>${ftState.recipient?.recipientName} ${ftState.nickname ? '(' + ftState.nickname + ')' : ''}</td></tr>
+  <tr><td>Remarks</td><td>${ftState.note || '-'}</td></tr>
+  <tr><td>Fee</td><td>${ftState.fee > 0 ? '₹' + ftState.fee + ' + GST' : 'Free'}</td></tr>
+  <tr><td>Timing</td><td>${ftState.isScheduled ? ftState.scheduleDate : new Date().toLocaleString('en-IN')}</td></tr>
+  <tr><td>Status</td><td style="color:${statColor};font-weight:700;">${statTxt}</td></tr>
   </table></body></html>`;
-  const w = window.open('','_blank'); w.document.write(html); w.document.close();
-}
+      const w = window.open('', '_blank'); w.document.write(html); w.document.close();
+    }
 
-function resetWizard() {
-  ftState = {}; currentStep = 1;
-  for (let i=1;i<=5;i++) document.getElementById('step-panel-'+i).style.display = i===1?'block':'none';
-  ['otp-1','otp-2','otp-3','otp-4','otp-5','otp-6'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('recipient-chip').style.display='none';
-  document.getElementById('btn-step2-next').disabled = true;
-  goStep(1);
-}
-</script>
+    function resetWizard() {
+      ftState = { fromAccount: '', fromAccountLabel: '', recipient: null, nickname: '', savePayee: true, amount: 0, note: '', purpose: '', txnId: '', trnType: 'IMPS', isScheduled: false, fee: 5 };
+      currentStep = 1;
+      for (let i = 1; i <= 5; i++) document.getElementById('step-panel-' + i).style.display = i === 1 ? 'block' : 'none';
+      ['otp-1', 'otp-2', 'otp-3', 'otp-4', 'otp-5', 'otp-6'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('recipient-chip').style.display = 'none';
+      document.getElementById('beneficiary-extras').style.display = 'none';
+      document.getElementById('btn-step2-next').disabled = true;
+      document.getElementById('ft-recipient-account').value = '';
+      document.getElementById('ft-amount').value = '';
+      document.getElementById('ft-note').value = '';
+      document.getElementById('note-chars').innerText = '0';
+      document.getElementById('ft-nickname').value = '';
+      selectTransferType('IMPS');
+      document.querySelectorAll('input[name="schedToggle"]')[0].checked = true;
+      toggleSchedule(false);
+      goStep(1);
+    }
+  </script>
 </body>
+
 </html>

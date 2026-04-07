@@ -722,30 +722,73 @@ function loadTransferAccounts() {
         });
 }
 
+let dashTransferState = { type: 'IMPS', isScheduled: false };
+
+function selectDashTransferType(type) {
+    dashTransferState.type = type;
+    document.querySelectorAll('[id^="dash-type-"]').forEach(el => el.classList.remove('selected'));
+    document.getElementById('dash-type-' + type).classList.add('selected');
+}
+
+function toggleDashSchedule(isLater) {
+    dashTransferState.isScheduled = isLater;
+    document.getElementById('dash-schedule-date').style.display = isLater ? 'block' : 'none';
+}
+
 function transferUI() {
     const fromAccountId = document.getElementById('fromAccountSelect').value;
     const toAccountId = document.getElementById('toAccountId').value;
-    const amount = document.getElementById('transferAmount').value;
+    const amountFloat = parseFloat(document.getElementById('transferAmount').value);
     const category = document.getElementById('category').value;
+    const nickname = document.getElementById('transferNickname').value.trim();
+    const remarks = document.getElementById('transferRemarks').value.trim();
     const userCode = localStorage.getItem('userCode');
     const resultEl = document.getElementById('transferResult');
     const btn = document.getElementById('btn-transfer-submit');
 
-    if (!toAccountId || !amount) { showToast('Please fill all transfer fields', 'warning'); return; }
+    if (!toAccountId || !amountFloat || amountFloat <= 0) { showToast('Please fill all required transfer fields', 'warning'); return; }
+
+    if (dashTransferState.type === 'IMPS' && amountFloat > 500000) { showToast('IMPS limit is ₹5,00,000. Try NEFT or RTGS.', 'error'); return; }
+    if (dashTransferState.type === 'RTGS' && amountFloat < 200000) { showToast('RTGS minimum is ₹2,00,000. Try IMPS or NEFT.', 'error'); return; }
+    
+    let schedDate = null;
+    if (dashTransferState.isScheduled) {
+        schedDate = document.getElementById('dash-schedule-date').value;
+        if (!schedDate) { showToast('Please select a schedule date', 'error'); return; }
+        if (new Date(schedDate) <= new Date()) { showToast('Schedule date must be in the future', 'error'); return; }
+    }
 
     setLoading(btn, true);
     resultEl.innerText = '';
 
-    fetch(`/accounts/transfer?fromAccountId=${fromAccountId}&toAccountId=${toAccountId}&amount=${amount}&userCode=${userCode}&category=${category}`, { method: 'POST' })
-        .then(res => res.text())
-        .then(data => {
-            setLoading(btn, false);
-            resultEl.innerText = data;
-            const isOk = !data.toLowerCase().includes('fail') && !data.toLowerCase().includes('insufficient');
-            showToast(data, isOk ? 'success' : 'error');
-            loadAccounts();
-        })
-        .catch(() => { setLoading(btn, false); showToast('Transfer failed', 'error'); });
+    // Simulate extra processing time for the new logic before calling standard /accounts/transfer backend
+    setTimeout(() => {
+        let fee = dashTransferState.type === 'IMPS' ? 5 : 0;
+        let totalAmt = amountFloat + (fee * 1.18);
+        
+        fetch(`/accounts/transfer?fromAccountId=${fromAccountId}&toAccountId=${toAccountId}&amount=${amountFloat}&userCode=${userCode}&category=${category}`, { method: 'POST' })
+            .then(res => res.text())
+            .then(data => {
+                setLoading(btn, false);
+                const isOk = !data.toLowerCase().includes('fail') && !data.toLowerCase().includes('insufficient');
+                if (isOk) {
+                    let appendMsg = `\nMode: ${dashTransferState.type}`;
+                    if (fee > 0) appendMsg += ` (Fee ₹${fee} applied)`;
+                    if (dashTransferState.isScheduled) appendMsg += `\nSCHEDULED: ${new Date(schedDate).toLocaleString('en-IN')}`;
+                    if (nickname) appendMsg += `\nTo (Nickname): ${nickname}`;
+                    if (remarks) appendMsg += `\nRemarks: ${remarks}`;
+                    
+                    const finalData = data + appendMsg;
+                    resultEl.innerText = finalData;
+                    showToast(dashTransferState.isScheduled ? 'Transfer Scheduled' : 'Transfer Successful', 'success');
+                    loadAccounts();
+                } else {
+                    resultEl.innerText = data;
+                    showToast(data, 'error');
+                }
+            })
+            .catch(() => { setLoading(btn, false); showToast('Transfer failed', 'error'); });
+    }, 500);
 }
 
 // ─────────────────────────────────────────────────────────────

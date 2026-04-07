@@ -1,507 +1,581 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BugBank Dashboard</title>
-    <meta name="description" content="BugBank dashboard — manage your accounts, transfers, loans, cards and investments in one place.">
+    <meta name="description"
+        content="BugBank dashboard — manage your accounts, transfers, loans, cards and investments in one place.">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="dashboard">
+    <div class="dashboard">
 
-    <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
-    <nav class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">🏦</div>
-            <span class="sidebar-brand">BugBank</span>
-        </div>
+        <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🏦</div>
+                <span class="sidebar-brand">BugBank</span>
+            </div>
 
-        <div class="sidebar-nav" style="flex: 0 0 auto; overflow-y: visible; padding-bottom: 0.5rem;">
-            <button id="nav-accounts"    class="nav-item active"  onclick="showSection('accounts')">
-                <span class="nav-icon">🏛️</span><span>Accounts</span>
-            </button>
-            <button id="nav-transfer"    class="nav-item" onclick="showSection('transfer')">
-                <span class="nav-icon">↔️</span><span>Transfer</span>
-            </button>
-            <button id="nav-transactions" class="nav-item" onclick="showSection('transactions')">
-                <span class="nav-icon">📋</span><span>Transactions</span>
-            </button>
-            <button id="nav-loans"       class="nav-item" onclick="showSection('loans')">
-                <span class="nav-icon">🏠</span><span>Loans</span>
-            </button>
-            <button id="nav-cards"       class="nav-item" onclick="showSection('cards')">
-                <span class="nav-icon">💳</span><span>Cards</span>
-            </button>
-            <button id="nav-fd" class="nav-item" onclick="showSection('fd')">
-                <span class="nav-icon">🏦</span><span>Fixed Deposits</span>
-            </button>
-            <button id="nav-investments" class="nav-item" onclick="showSection('investments')">
-                <span class="nav-icon">📈</span><span>Investments</span>
-            </button>
-        </div>
+            <div class="sidebar-nav" style="flex: 0 0 auto; overflow-y: visible; padding-bottom: 0.5rem;">
+                <button id="nav-accounts" class="nav-item active" onclick="showSection('accounts')">
+                    <span class="nav-icon">🏛️</span><span>Accounts</span>
+                </button>
+                <button id="nav-transfer" class="nav-item" onclick="showSection('transfer')">
+                    <span class="nav-icon">↔️</span><span>Transfer</span>
+                </button>
+                <button id="nav-transactions" class="nav-item" onclick="showSection('transactions')">
+                    <span class="nav-icon">📋</span><span>Transactions</span>
+                </button>
+                <button id="nav-loans" class="nav-item" onclick="showSection('loans')">
+                    <span class="nav-icon">🏠</span><span>Loans</span>
+                </button>
+                <button id="nav-cards" class="nav-item" onclick="showSection('cards')">
+                    <span class="nav-icon">💳</span><span>Cards</span>
+                </button>
+                <button id="nav-fd" class="nav-item" onclick="showSection('fd')">
+                    <span class="nav-icon">🏦</span><span>Fixed Deposits</span>
+                </button>
+                <button id="nav-investments" class="nav-item" onclick="showSection('investments')">
+                    <span class="nav-icon">📈</span><span>Investments</span>
+                </button>
+            </div>
 
-        <!-- Testing Tools (new pages) -->
-        <div class="sidebar-nav" style="margin-top: 0; padding-top: 0.75rem; border-top: 1px solid var(--glass-border);">
-            <div style="font-size:.62rem;color:var(--text-muted);letter-spacing:.8px;font-weight:800;text-transform:uppercase;padding:.25rem .5rem .5rem;opacity:.7;">Testing Tools</div>
-            <a id="nav-playground" class="nav-item" href="selenium-playground.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🧪</span><span>Selenium Lab</span>
-            </a>
-            <a id="nav-fund-transfer" class="nav-item" href="fund-transfer.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">↔️</span><span>Transfer Wizard</span>
-            </a>
-            <a id="nav-txn-history" class="nav-item" href="transactions.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">📊</span><span>Txn History</span>
-            </a>
-            <a id="nav-profile" class="nav-item" href="profile.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">👤</span><span>My Profile</span>
-            </a>
-            <a id="nav-loan-app" class="nav-item" href="loan-application.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🏦</span><span>Loan Apply</span>
-            </a>
-            <a id="nav-widgets" class="nav-item" href="widgets.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">📐</span><span>Widgets</span>
-            </a>
-            <div style="font-size:.62rem;color:var(--text-muted);letter-spacing:.8px;font-weight:800;text-transform:uppercase;padding:.75rem .5rem .5rem;opacity:.7;">Cucumber Targets</div>
-            <a id="nav-bdd-login" class="nav-item" href="bdd-login.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🥒</span><span>BDD Login</span>
-            </a>
-            <a id="nav-bdd-wizard" class="nav-item" href="bdd-wizard.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🥒</span><span>BDD Wizard</span>
-            </a>
-            <a id="nav-bdd-bulk" class="nav-item" href="bdd-bulk-transfer.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🥒</span><span>BDD Bulk Transfer</span>
-            </a>
-            <a id="nav-bdd-loan" class="nav-item" href="bdd-loan-admin.html" style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
-                <span class="nav-icon">🥒</span><span>BDD Loan Admin</span>
-            </a>
-        </div>
+            <!-- Testing Tools (new pages) -->
+            <div class="sidebar-nav"
+                style="margin-top: 0; padding-top: 0.75rem; border-top: 1px solid var(--glass-border);">
+                <div
+                    style="font-size:.62rem;color:var(--text-muted);letter-spacing:.8px;font-weight:800;text-transform:uppercase;padding:.25rem .5rem .5rem;opacity:.7;">
+                    Testing Tools</div>
+                <a id="nav-playground" class="nav-item" href="selenium-playground.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🧪</span><span>Selenium Lab</span>
+                </a>
+                <a id="nav-fund-transfer" class="nav-item" href="fund-transfer.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">↔️</span><span>Transfer Wizard</span>
+                </a>
+                <a id="nav-txn-history" class="nav-item" href="transactions.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">📊</span><span>Txn History</span>
+                </a>
+                <a id="nav-profile" class="nav-item" href="profile.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">👤</span><span>My Profile</span>
+                </a>
+                <a id="nav-loan-app" class="nav-item" href="loan-application.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🏦</span><span>Loan Apply</span>
+                </a>
+                <a id="nav-widgets" class="nav-item" href="widgets.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">📐</span><span>Widgets</span>
+                </a>
+                <div
+                    style="font-size:.62rem;color:var(--text-muted);letter-spacing:.8px;font-weight:800;text-transform:uppercase;padding:.75rem .5rem .5rem;opacity:.7;">
+                    Cucumber Targets</div>
+                <a id="nav-bdd-login" class="nav-item" href="bdd-login.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🥒</span><span>BDD Login</span>
+                </a>
+                <a id="nav-bdd-wizard" class="nav-item" href="bdd-wizard.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🥒</span><span>BDD Wizard</span>
+                </a>
+                <a id="nav-bdd-bulk" class="nav-item" href="bdd-bulk-transfer.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🥒</span><span>BDD Bulk Transfer</span>
+                </a>
+                <a id="nav-bdd-loan" class="nav-item" href="bdd-loan-admin.html"
+                    style="text-decoration:none;display:flex;gap:.5rem;align-items:center;">
+                    <span class="nav-icon">🥒</span><span>BDD Loan Admin</span>
+                </a>
+            </div>
 
-        <div class="sidebar-footer">
-            <div class="user-chip">
-                <div class="user-avatar" id="userAvatarInitial">U</div>
-                <div class="user-info">
-                    <div class="user-code-label">User Code</div>
-                    <div class="user-code-val" id="userCodeDisplay">—</div>
+            <div class="sidebar-footer">
+                <div class="user-chip">
+                    <div class="user-avatar" id="userAvatarInitial">U</div>
+                    <div class="user-info">
+                        <div class="user-code-label">User Code</div>
+                        <div class="user-code-val" id="userCodeDisplay">—</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <!-- ══════════════════════ NAVBAR ══════════════════════ -->
-    <header class="navbar">
-        <span class="navbar-title" id="navbarSectionTitle">Account Overview</span>
-        <div class="navbar-right">
-            <span id="userCodeDisplay2"></span>
-            <button id="btn-logout" class="btn-logout" onclick="logout()">⏻ Logout</button>
-        </div>
-    </header>
-
-    <!-- ══════════════════════ MAIN ══════════════════════ -->
-    <main class="main">
-
-        <!-- ─── ACCOUNTS ─── -->
-        <div id="accounts" class="section">
-            <div class="section-header">
-                <h2>🏛️ Account Overview</h2>
-                <p>Manage and monitor all your bank accounts</p>
+        <!-- ══════════════════════ NAVBAR ══════════════════════ -->
+        <header class="navbar">
+            <span class="navbar-title" id="navbarSectionTitle">Account Overview</span>
+            <div class="navbar-right">
+                <span id="userCodeDisplay2"></span>
+                <button id="btn-logout" class="btn-logout" onclick="logout()">⏻ Logout</button>
             </div>
+        </header>
 
-            <!-- Create buttons -->
-            <div class="create-btns">
-                <button id="btn-create-savings"  class="btn btn-ghost" onclick="createAccountUI('SAVINGS')">
-                    ＋ Savings Account
-                </button>
-                <button id="btn-create-current"  class="btn btn-ghost" onclick="createAccountUI('CURRENT')">
-                    ＋ Current Account
-                </button>
-                <button id="btn-create-business" class="btn btn-ghost" onclick="createAccountUI('BUSINESS')">
-                    ＋ Business Account
-                </button>
-            </div>
+        <!-- ══════════════════════ MAIN ══════════════════════ -->
+        <main class="main">
 
-            <!-- Account cards list -->
-            <div id="accountList">
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card" style="height:100px;opacity:0.6"></div>
-            </div>
+            <!-- ─── ACCOUNTS ─── -->
+            <div id="accounts" class="section">
+                <div class="section-header">
+                    <h2>🏛️ Account Overview</h2>
+                    <p>Manage and monitor all your bank accounts</p>
+                </div>
 
-            <!-- Transactions preview -->
-            <div id="txnContainer"></div>
+                <!-- Create buttons -->
+                <div class="create-btns">
+                    <button id="btn-create-savings" class="btn btn-ghost" onclick="createAccountUI('SAVINGS')">
+                        ＋ Savings Account
+                    </button>
+                    <button id="btn-create-current" class="btn btn-ghost" onclick="createAccountUI('CURRENT')">
+                        ＋ Current Account
+                    </button>
+                    <button id="btn-create-business" class="btn btn-ghost" onclick="createAccountUI('BUSINESS')">
+                        ＋ Business Account
+                    </button>
+                </div>
 
-            <div class="divider"></div>
+                <!-- Account cards list -->
+                <div id="accountList">
+                    <div class="skeleton skeleton-card"></div>
+                    <div class="skeleton skeleton-card" style="height:100px;opacity:0.6"></div>
+                </div>
 
-            <!-- ATM Operations -->
-            <div class="sub-h3">🏧 ATM Operations</div>
-            <div class="atm-card-wrap">
-                <div class="atm-visual">
-                    <div class="atm-chip">💾</div>
-                    <div>
-                        <div class="atm-label">Selected Account</div>
-                        <div class="atm-value">
-                            <select id="atmAccountSelect" style="background:transparent;border:none;color:#fff;font-family:inherit;font-size:1rem;cursor:pointer;outline:none;width:100%;"></select>
+                <!-- Transactions preview -->
+                <div id="txnContainer"></div>
+
+                <div class="divider"></div>
+
+                <!-- ATM Operations -->
+                <div class="sub-h3">🏧 ATM Operations</div>
+                <div class="atm-card-wrap">
+                    <div class="atm-visual">
+                        <div class="atm-chip">💾</div>
+                        <div>
+                            <div class="atm-label">Selected Account</div>
+                            <div class="atm-value">
+                                <select id="atmAccountSelect"
+                                    style="background:transparent;border:none;color:#fff;font-family:inherit;font-size:1rem;cursor:pointer;outline:none;width:100%;"></select>
+                            </div>
                         </div>
                     </div>
+                    <div class="form-card" style="margin-bottom:0;">
+                        <div class="form-field" style="margin-bottom:1rem;">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="atmAmount" placeholder="Enter amount">
+                        </div>
+                        <div style="display:flex;gap:0.75rem;">
+                            <button id="btn-atm-deposit" class="btn btn-success" style="flex:1;"
+                                onclick="atmDeposit()">⬆ Deposit</button>
+                            <button id="btn-atm-withdraw" class="btn btn-danger" style="flex:1;"
+                                onclick="atmWithdraw()">⬇ Withdraw</button>
+                        </div>
+                        <div id="atmResult" class="result-box"></div>
+                    </div>
                 </div>
-                <div class="form-card" style="margin-bottom:0;">
+            </div>
+
+            <!-- ─── TRANSFER ─── -->
+            <div id="transfer" class="section hidden">
+                <div class="section-header">
+                    <h2>↔️ Transfer Funds</h2>
+                    <p>Send money securely to any account</p>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>From Account</label>
+                            <select id="fromAccountSelect"></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Receiver Account ID</label>
+                            <input type="number" id="toAccountId" placeholder="e.g. 1023">
+                        </div>
+                        <div class="form-field">
+                            <label>Beneficiary Nickname</label>
+                            <input type="text" id="transferNickname" placeholder="e.g. Rent, Mom">
+                        </div>
+                        <div class="form-field" style="grid-column: 1 / -1;">
+                            <label>Transfer Type</label>
+                            <div class="type-grid">
+                                <div class="type-card selected" onclick="selectDashTransferType('IMPS')"
+                                    id="dash-type-IMPS">
+                                    <div class="type-name">IMPS</div>
+                                    <div class="type-desc">Max ₹5L<br>Fee: ₹5</div>
+                                </div>
+                                <div class="type-card" onclick="selectDashTransferType('NEFT')" id="dash-type-NEFT">
+                                    <div class="type-name">NEFT</div>
+                                    <div class="type-desc">2-3 hrs<br>Free</div>
+                                </div>
+                                <div class="type-card" onclick="selectDashTransferType('RTGS')" id="dash-type-RTGS">
+                                    <div class="type-name">RTGS</div>
+                                    <div class="type-desc">Min ₹2L<br>Free</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="transferAmount" placeholder="e.g. 5000">
+                        </div>
+                        <div class="form-field">
+                            <label>Category</label>
+                            <select id="category">
+                                <option value="friend">Friend / Family</option>
+                                <option value="loan">Loan</option>
+                                <option value="investment">Investment</option>
+                                <option value="grocery">Grocery</option>
+                                <option value="travel">Travel</option>
+                                <option value="PERSONAL">Personal</option>
+                            </select>
+                        </div>
+                        <div class="form-field" style="grid-column: 1 / -1;">
+                            <label>Schedule Transfer</label>
+                            <div class="schedule-toggle">
+                                <label class="radio-lbl"><input type="radio" name="dashSchedToggle" value="now"
+                                        onclick="toggleDashSchedule(false)" checked> Now</label>
+                                <label class="radio-lbl"><input type="radio" name="dashSchedToggle" value="later"
+                                        onclick="toggleDashSchedule(true)"> Later</label>
+                            </div>
+                            <input type="datetime-local" id="dash-schedule-date"
+                                style="display:none;margin-top:.75rem;background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-primary);padding:.5rem;width:100%;box-sizing:border-box;">
+                        </div>
+                        <div class="form-field" style="grid-column: 1 / -1;">
+                            <label>Remarks / Description (Optional)</label>
+                            <input type="text" id="transferRemarks" placeholder="e.g. Monthly rent" maxlength="150"
+                                oninput="document.getElementById('dash-note-chars').innerText=this.value.length"
+                                style="padding:0.6rem;background:transparent;border:1px solid var(--glass-border);border-radius:6px;color:var(--text-primary);width:100%;box-sizing:border-box;">
+                            <div style="text-align:right;font-size:.75rem;color:var(--text-muted);margin-top:.25rem;">
+                                <span id="dash-note-chars">0</span> / 150</div>
+                        </div>
+                    </div>
+                    <button id="btn-transfer-submit" class="btn btn-primary" onclick="transferUI()">Send Money
+                        →</button>
+                    <div id="transferResult" class="result-box"></div>
+                </div>
+            </div>
+
+            <!-- ─── TRANSACTIONS ─── -->
+            <div id="transactions" class="section hidden">
+                <div class="section-header">
+                    <h2>📋 Transactions</h2>
+                    <p>View and search your transaction history</p>
+                </div>
+
+                <!-- View last 15 -->
+                <div class="form-card">
+                    <div class="sub-h3" style="margin-bottom:1rem;">View Recent</div>
+                    <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
+                        <div class="form-field" style="flex:1;min-width:180px;">
+                            <label>Account</label>
+                            <select id="txnAccountSelect"></select>
+                        </div>
+                        <button id="btn-view-last15" class="btn btn-primary" onclick="loadLast15Transactions()">View
+                            Last 15</button>
+                    </div>
+                </div>
+
+                <!-- Search tools -->
+                <div class="form-card">
+                    <div class="sub-h3" style="margin-bottom:1rem;">Search Transactions</div>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>By Transaction ID</label>
+                            <input type="text" id="searchTxnId" placeholder="Transaction ID">
+                        </div>
+                        <div style="display:flex;align-items:flex-end;">
+                            <button id="btn-search-by-id" class="btn btn-ghost" onclick="searchById()">🔍 Search
+                                ID</button>
+                        </div>
+                        <div class="form-field">
+                            <label>By Amount (₹)</label>
+                            <input type="number" id="searchAmount" placeholder="Amount">
+                        </div>
+                        <div style="display:flex;align-items:flex-end;">
+                            <button id="btn-search-by-amount" class="btn btn-ghost" onclick="searchByAmount()">🔍 Search
+                                Amount</button>
+                        </div>
+                        <div class="form-field">
+                            <label>Start Date</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="form-field">
+                            <label>End Date</label>
+                            <input type="date" id="endDate">
+                        </div>
+                    </div>
+                    <button id="btn-search-by-date" class="btn btn-ghost" onclick="searchByDateRange()">🗓️ Search by
+                        Date Range</button>
+                </div>
+
+                <div id="txnResult"></div>
+            </div>
+
+            <!-- ─── LOANS ─── -->
+            <div id="loans" class="section hidden">
+                <div class="section-header">
+                    <h2>🏠 Loans</h2>
+                    <p>Apply for instant loans and manage repayments</p>
+                </div>
+
+                <div class="form-card">
+                    <div class="sub-h3" style="margin-bottom:1rem;">Apply for a Loan</div>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Loan Amount (₹)</label>
+                            <input type="number" id="loanAmount" placeholder="e.g. 100000">
+                        </div>
+                        <div class="form-field">
+                            <label>Down Payment (₹)</label>
+                            <input type="number" id="downPayment" placeholder="e.g. 10000">
+                        </div>
+                        <div class="form-field">
+                            <label>Category</label>
+                            <select id="loanCategory">
+                                <option value="Personal">Personal Loan</option>
+                                <option value="Home">Home Loan</option>
+                                <option value="Education">Education Loan</option>
+                                <option value="Vehicle">Vehicle Loan</option>
+                                <option value="Business">Business Loan</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Duration (months)</label>
+                            <input type="number" id="loanMonths" placeholder="e.g. 24">
+                        </div>
+                        <div class="form-field">
+                            <label>Disburse to Account</label>
+                            <select id="loanApplyAccountSelect"></select>
+                        </div>
+                    </div>
+                    <button id="btn-apply-loan" class="btn btn-primary" onclick="applyLoan()">Apply Now →</button>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Loans</div>
+                    <button id="btn-view-loans" class="btn btn-ghost btn-sm" onclick="loadLoans()">↺ Refresh</button>
+                </div>
+
+                <div id="loanResult"></div>
+
+                <div class="form-card" style="margin-top:1.25rem;">
+                    <div class="form-field">
+                        <label>Pay from Account</label>
+                        <select id="loanPayAccountSelect"></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── CARDS ─── -->
+            <div id="cards" class="section hidden">
+                <div class="section-header">
+                    <h2>💳 Cards</h2>
+                    <p>Apply for debit or credit cards instantly</p>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-bottom:1.75rem;">
+                    <button id="btn-apply-debit" class="btn btn-primary" onclick="applyCard('DEBIT')">＋ Apply Debit
+                        Card</button>
+                    <button id="btn-apply-credit" class="btn btn-ghost" onclick="applyCard('CREDIT')">＋ Apply Credit
+                        Card</button>
+                    <button id="btn-view-cards" class="btn btn-ghost btn-sm" onclick="loadCards()"
+                        style="margin-left:auto;">↺ Refresh</button>
+                </div>
+
+                <div id="cardResult">
+                    <div class="empty-state">
+                        <div class="empty-icon">💳</div>
+                        <p>Click "Refresh" to load your cards</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fd" class="section hidden">
+
+                <div class="section-header">
+                    <h2>🏦 Fixed Deposits</h2>
+                    <p>Secure returns with guaranteed maturity</p>
+                </div>
+
+                <!-- CREATE FD -->
+                <div class="form-card">
+                    <div class="form-grid">
+
+                        <div class="form-field">
+                            <label>Select Account</label>
+                            <select id="fdAccountSelect"></select>
+                        </div>
+
+                        <div class="form-field">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="fdAmount" placeholder="Enter amount">
+                        </div>
+
+                        <div class="form-field">
+                            <label>Duration (months)</label>
+                            <input type="number" id="fdMonths" placeholder="e.g. 12">
+                        </div>
+
+                    </div>
+
+                    <button class="btn btn-primary" onclick="createFDUI()">Create FD</button>
+                    <div id="fdResult" class="result-box"></div>
+                </div>
+
+                <!-- FD LIST -->
+                <div style="display:flex;justify-content:space-between;margin-top:1rem;">
+                    <div class="sub-h3">Your Fixed Deposits</div>
+                    <button class="btn btn-ghost btn-sm" onclick="loadFDs()">↺ Refresh</button>
+                </div>
+
+                <div id="fdList"></div>
+
+            </div>
+
+            <!-- ─── INVESTMENTS ─── -->
+            <div id="investments" class="section hidden">
+
+                <div class="section-header">
+                    <h2>📈 Investment Market</h2>
+                    <p>Dynamic market simulation (test-ready environment)</p>
+                </div>
+
+                <!-- 🔥 MARKET CONTROLS -->
+                <div class="market-controls">
+                    <button class="btn btn-sm btn-primary" onclick="toggleMarketMode()">⚡ Risk Mode</button>
+                    <button class="btn btn-sm btn-ghost" onclick="triggerMarketCrash()">💥 Crash Market</button>
+                </div>
+
+                <!-- Summary -->
+                <div class="invest-summary">
+                    <div class="invest-stat">
+                        <div class="invest-stat-label">Total Invested</div>
+                        <div class="invest-stat-value grad-text" id="totalInvested">₹0</div>
+                    </div>
+                    <div class="invest-stat">
+                        <div class="invest-stat-label">Total Profit / Loss</div>
+                        <div class="invest-stat-value" id="totalProfit">₹0</div>
+                    </div>
+                </div>
+
+                <!-- 🔥 LIVE MARKET GRID -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <div class="sub-h3" style="margin-bottom:0;">Live Market (Click any bank)</div>
+                    <button class="btn btn-ghost btn-sm" onclick="loadInvestmentCards()">↺ Refresh</button>
+                </div>
+                <div id="investmentCards" class="invest-grid"></div>
+
+                <div class="divider"></div>
+
+                <!-- PORTFOLIO -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                    <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Portfolio</div>
+                    <button class="btn btn-ghost btn-sm" onclick="loadInvestments()">↺ Refresh</button>
+                </div>
+
+                <div id="invResult"></div>
+            </div>
+
+            <!-- 🔥 GRAPH MODAL -->
+            <div id="graphModal" class="modal hidden">
+                <div class="modal-card">
+                    <button class="modal-close" onclick="closeGraphModal()">✕</button>
+
+                    <h2 id="graphTitle">Market Performance</h2>
+                    <canvas id="bankChart" height="200"></canvas>
+
+                    <p style="margin-top:1rem;font-weight:600;">
+                        Current Return: <span id="currentReturn"></span>
+                    </p>
+
+                    <button class="btn-modal-submit" onclick="openInvestFromGraph()">Invest Now →</button>
+                </div>
+            </div>
+
+            <!-- Invest Modal -->
+            <div id="investModal" class="modal hidden">
+                <div class="modal-card">
+                    <button class="modal-close" onclick="closeInvestModal()">✕</button>
+
+                    <h2 id="investModalTitle">Invest in Bank</h2>
+                    <p class="form-sub" id="dynamicReturnText" style="margin-top:0.25rem;margin-bottom:1.5rem;">
+                        Dynamic return based on market performance
+                    </p>
+
                     <div class="form-field" style="margin-bottom:1rem;">
-                        <label>Amount (₹)</label>
-                        <input type="number" id="atmAmount" placeholder="Enter amount">
-                    </div>
-                    <div style="display:flex;gap:0.75rem;">
-                        <button id="btn-atm-deposit"  class="btn btn-success" style="flex:1;" onclick="atmDeposit()">⬆ Deposit</button>
-                        <button id="btn-atm-withdraw" class="btn btn-danger"  style="flex:1;" onclick="atmWithdraw()">⬇ Withdraw</button>
-                    </div>
-                    <div id="atmResult" class="result-box"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ─── TRANSFER ─── -->
-        <div id="transfer" class="section hidden">
-            <div class="section-header">
-                <h2>↔️ Transfer Funds</h2>
-                <p>Send money securely to any account</p>
-            </div>
-
-            <div class="form-card">
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label>From Account</label>
-                        <select id="fromAccountSelect"></select>
-                    </div>
-                    <div class="form-field">
-                        <label>Receiver Account ID</label>
-                        <input type="number" id="toAccountId" placeholder="e.g. 1023">
-                    </div>
-                    <div class="form-field">
-                        <label>Amount (₹)</label>
-                        <input type="number" id="transferAmount" placeholder="e.g. 5000">
-                    </div>
-                    <div class="form-field">
-                        <label>Category</label>
-                        <select id="category">
-                            <option value="friend">Friend / Family</option>
-                            <option value="loan">Loan</option>
-                            <option value="investment">Investment</option>
-                            <option value="grocery">Grocery</option>
-                            <option value="travel">Travel</option>
-                            <option value="PERSONAL">Personal</option>
-                        </select>
-                    </div>
-                </div>
-                <button id="btn-transfer-submit" class="btn btn-primary" onclick="transferUI()">Send Money →</button>
-                <div id="transferResult" class="result-box"></div>
-            </div>
-        </div>
-
-        <!-- ─── TRANSACTIONS ─── -->
-        <div id="transactions" class="section hidden">
-            <div class="section-header">
-                <h2>📋 Transactions</h2>
-                <p>View and search your transaction history</p>
-            </div>
-
-            <!-- View last 15 -->
-            <div class="form-card">
-                <div class="sub-h3" style="margin-bottom:1rem;">View Recent</div>
-                <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
-                    <div class="form-field" style="flex:1;min-width:180px;">
-                        <label>Account</label>
-                        <select id="txnAccountSelect"></select>
-                    </div>
-                    <button id="btn-view-last15" class="btn btn-primary" onclick="loadLast15Transactions()">View Last 15</button>
-                </div>
-            </div>
-
-            <!-- Search tools -->
-            <div class="form-card">
-                <div class="sub-h3" style="margin-bottom:1rem;">Search Transactions</div>
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label>By Transaction ID</label>
-                        <input type="text" id="searchTxnId" placeholder="Transaction ID">
-                    </div>
-                    <div style="display:flex;align-items:flex-end;">
-                        <button id="btn-search-by-id" class="btn btn-ghost" onclick="searchById()">🔍 Search ID</button>
-                    </div>
-                    <div class="form-field">
-                        <label>By Amount (₹)</label>
-                        <input type="number" id="searchAmount" placeholder="Amount">
-                    </div>
-                    <div style="display:flex;align-items:flex-end;">
-                        <button id="btn-search-by-amount" class="btn btn-ghost" onclick="searchByAmount()">🔍 Search Amount</button>
-                    </div>
-                    <div class="form-field">
-                        <label>Start Date</label>
-                        <input type="date" id="startDate">
-                    </div>
-                    <div class="form-field">
-                        <label>End Date</label>
-                        <input type="date" id="endDate">
-                    </div>
-                </div>
-                <button id="btn-search-by-date" class="btn btn-ghost" onclick="searchByDateRange()">🗓️ Search by Date Range</button>
-            </div>
-
-            <div id="txnResult"></div>
-        </div>
-
-        <!-- ─── LOANS ─── -->
-        <div id="loans" class="section hidden">
-            <div class="section-header">
-                <h2>🏠 Loans</h2>
-                <p>Apply for instant loans and manage repayments</p>
-            </div>
-
-            <div class="form-card">
-                <div class="sub-h3" style="margin-bottom:1rem;">Apply for a Loan</div>
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label>Loan Amount (₹)</label>
-                        <input type="number" id="loanAmount" placeholder="e.g. 100000">
-                    </div>
-                    <div class="form-field">
-                        <label>Down Payment (₹)</label>
-                        <input type="number" id="downPayment" placeholder="e.g. 10000">
-                    </div>
-                    <div class="form-field">
-                        <label>Category</label>
-                        <select id="loanCategory">
-                            <option value="Personal">Personal Loan</option>
-                            <option value="Home">Home Loan</option>
-                            <option value="Education">Education Loan</option>
-                            <option value="Vehicle">Vehicle Loan</option>
-                            <option value="Business">Business Loan</option>
-                        </select>
-                    </div>
-                    <div class="form-field">
-                        <label>Duration (months)</label>
-                        <input type="number" id="loanMonths" placeholder="e.g. 24">
-                    </div>
-                    <div class="form-field">
-                        <label>Disburse to Account</label>
-                        <select id="loanApplyAccountSelect"></select>
-                    </div>
-                </div>
-                <button id="btn-apply-loan" class="btn btn-primary" onclick="applyLoan()">Apply Now →</button>
-            </div>
-
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Loans</div>
-                <button id="btn-view-loans" class="btn btn-ghost btn-sm" onclick="loadLoans()">↺ Refresh</button>
-            </div>
-
-            <div id="loanResult"></div>
-
-            <div class="form-card" style="margin-top:1.25rem;">
-                <div class="form-field">
-                    <label>Pay from Account</label>
-                    <select id="loanPayAccountSelect"></select>
-                </div>
-            </div>
-        </div>
-
-        <!-- ─── CARDS ─── -->
-        <div id="cards" class="section hidden">
-            <div class="section-header">
-                <h2>💳 Cards</h2>
-                <p>Apply for debit or credit cards instantly</p>
-            </div>
-
-            <div style="display:flex;gap:0.75rem;margin-bottom:1.75rem;">
-                <button id="btn-apply-debit"  class="btn btn-primary" onclick="applyCard('DEBIT')">＋ Apply Debit Card</button>
-                <button id="btn-apply-credit" class="btn btn-ghost"   onclick="applyCard('CREDIT')">＋ Apply Credit Card</button>
-                <button id="btn-view-cards"   class="btn btn-ghost btn-sm" onclick="loadCards()" style="margin-left:auto;">↺ Refresh</button>
-            </div>
-
-            <div id="cardResult">
-                <div class="empty-state">
-                    <div class="empty-icon">💳</div>
-                    <p>Click "Refresh" to load your cards</p>
-                </div>
-            </div>
-        </div>
-
-        <div id="fd" class="section hidden">
-
-            <div class="section-header">
-                <h2>🏦 Fixed Deposits</h2>
-                <p>Secure returns with guaranteed maturity</p>
-            </div>
-
-            <!-- CREATE FD -->
-            <div class="form-card">
-                <div class="form-grid">
-
-                    <div class="form-field">
                         <label>Select Account</label>
-                        <select id="fdAccountSelect"></select>
+                        <select id="investAccountSelect"></select>
                     </div>
 
-                    <div class="form-field">
-                        <label>Amount (₹)</label>
-                        <input type="number" id="fdAmount" placeholder="Enter amount">
+                    <div class="form-field" style="margin-bottom:1.25rem;">
+                        <label>Investment Amount (₹)</label>
+                        <input type="number" id="investAmountInput" placeholder="e.g. 25000">
                     </div>
 
-                    <div class="form-field">
-                        <label>Duration (months)</label>
-                        <input type="number" id="fdMonths" placeholder="e.g. 12">
+                    <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm
+                        Investment →</button>
+                </div>
+            </div>
+
+
+            <!-- Loan Pay Modal -->
+            <div id="loanPayModal" class="modal hidden">
+                <div class="modal-card">
+                    <button class="modal-close" onclick="closeLoanPayModal()">✕</button>
+                    <h2>Repay Loan</h2>
+                    <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Enter the amount you'd like to
+                        pay towards your loan.</p>
+                    <input type="hidden" id="currentLoanId">
+                    <div class="form-field" style="margin-bottom:1.25rem;">
+                        <label>Repayment Amount (₹)</label>
+                        <input type="number" id="loanPayAmount" placeholder="e.g. 5000">
+                    </div>
+                    <button id="btn-pay-loan-confirm" class="btn-modal-submit" onclick="confirmLoanPay()">Pay Now
+                        →</button>
+                </div>
+            </div>
+
+            <!-- Withdraw Investment Modal -->
+            <div id="withdrawModal" class="modal hidden">
+                <div class="modal-card">
+                    <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
+
+                    <h2>Withdraw Investment</h2>
+
+                    <div class="form-field" style="margin-bottom:1rem;">
+                        <label>Select Account</label>
+                        <select id="withdrawAccountSelect"></select>
+                    </div>
+
+                    <button class="btn-modal-submit" onclick="confirmWithdraw()">
+                        Confirm Withdraw →
+                    </button>
+                </div>
+            </div>
+            <script src="script.js"></script>
+
+            <div id="bondModal" class="bond-modal hidden">
+                <div class="bond-card">
+
+                    <div class="bond-header">
+                        <h2>🏦 BugBank Fixed Deposit Bond</h2>
+                        <p>Official Deposit Certificate</p>
+                    </div>
+
+                    <div id="bondContent" class="bond-content"></div>
+
+                    <div class="bond-footer">
+                        <button class="btn btn-primary" onclick="closeBond()">Close</button>
                     </div>
 
                 </div>
-
-                <button class="btn btn-primary" onclick="createFDUI()">Create FD</button>
-                <div id="fdResult" class="result-box"></div>
             </div>
-
-            <!-- FD LIST -->
-            <div style="display:flex;justify-content:space-between;margin-top:1rem;">
-                <div class="sub-h3">Your Fixed Deposits</div>
-                <button class="btn btn-ghost btn-sm" onclick="loadFDs()">↺ Refresh</button>
-            </div>
-
-            <div id="fdList"></div>
-
-        </div>
-
-        <!-- ─── INVESTMENTS ─── -->
-        <div id="investments" class="section hidden">
-
-            <div class="section-header">
-                <h2>📈 Investment Market</h2>
-                <p>Dynamic market simulation (test-ready environment)</p>
-            </div>
-
-            <!-- 🔥 MARKET CONTROLS -->
-            <div class="market-controls">
-                <button class="btn btn-sm btn-primary" onclick="toggleMarketMode()">⚡ Risk Mode</button>
-                <button class="btn btn-sm btn-ghost" onclick="triggerMarketCrash()">💥 Crash Market</button>
-            </div>
-
-            <!-- Summary -->
-            <div class="invest-summary">
-                <div class="invest-stat">
-                    <div class="invest-stat-label">Total Invested</div>
-                    <div class="invest-stat-value grad-text" id="totalInvested">₹0</div>
-                </div>
-                <div class="invest-stat">
-                    <div class="invest-stat-label">Total Profit / Loss</div>
-                    <div class="invest-stat-value" id="totalProfit">₹0</div>
-                </div>
-            </div>
-
-            <!-- 🔥 LIVE MARKET GRID -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                <div class="sub-h3" style="margin-bottom:0;">Live Market (Click any bank)</div>
-                <button class="btn btn-ghost btn-sm" onclick="loadInvestmentCards()">↺ Refresh</button>
-            </div>
-            <div id="investmentCards" class="invest-grid"></div>
-
-            <div class="divider"></div>
-
-            <!-- PORTFOLIO -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Portfolio</div>
-                <button class="btn btn-ghost btn-sm" onclick="loadInvestments()">↺ Refresh</button>
-            </div>
-
-            <div id="invResult"></div>
-        </div>
-
-        <!-- 🔥 GRAPH MODAL -->
-        <div id="graphModal" class="modal hidden">
-            <div class="modal-card">
-                <button class="modal-close" onclick="closeGraphModal()">✕</button>
-
-                <h2 id="graphTitle">Market Performance</h2>
-                <canvas id="bankChart" height="200"></canvas>
-
-                <p style="margin-top:1rem;font-weight:600;">
-                    Current Return: <span id="currentReturn"></span>
-                </p>
-
-                <button class="btn-modal-submit" onclick="openInvestFromGraph()">Invest Now →</button>
-            </div>
-        </div>
-
-        <!-- Invest Modal -->
-        <div id="investModal" class="modal hidden">
-            <div class="modal-card">
-                <button class="modal-close" onclick="closeInvestModal()">✕</button>
-
-                <h2 id="investModalTitle">Invest in Bank</h2>
-                <p class="form-sub" id="dynamicReturnText" style="margin-top:0.25rem;margin-bottom:1.5rem;">
-                    Dynamic return based on market performance
-                </p>
-
-                <div class="form-field" style="margin-bottom:1rem;">
-                    <label>Select Account</label>
-                    <select id="investAccountSelect"></select>
-                </div>
-
-                <div class="form-field" style="margin-bottom:1.25rem;">
-                    <label>Investment Amount (₹)</label>
-                    <input type="number" id="investAmountInput" placeholder="e.g. 25000">
-                </div>
-
-                <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm Investment →</button>
-            </div>
-        </div>
-
-
-<!-- Loan Pay Modal -->
-<div id="loanPayModal" class="modal hidden">
-    <div class="modal-card">
-        <button class="modal-close" onclick="closeLoanPayModal()">✕</button>
-        <h2>Repay Loan</h2>
-        <p class="form-sub" style="margin-top:0.25rem;margin-bottom:1.5rem;">Enter the amount you'd like to pay towards your loan.</p>
-        <input type="hidden" id="currentLoanId">
-        <div class="form-field" style="margin-bottom:1.25rem;">
-            <label>Repayment Amount (₹)</label>
-            <input type="number" id="loanPayAmount" placeholder="e.g. 5000">
-        </div>
-        <button id="btn-pay-loan-confirm" class="btn-modal-submit" onclick="confirmLoanPay()">Pay Now →</button>
-    </div>
-</div>
-
-<!-- Withdraw Investment Modal -->
-        <div id="withdrawModal" class="modal hidden">
-            <div class="modal-card">
-                <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
-
-                <h2>Withdraw Investment</h2>
-
-                <div class="form-field" style="margin-bottom:1rem;">
-                    <label>Select Account</label>
-                    <select id="withdrawAccountSelect"></select>
-                </div>
-
-                <button class="btn-modal-submit" onclick="confirmWithdraw()">
-                    Confirm Withdraw →
-                </button>
-            </div>
-        </div>
-<script src="script.js"></script>
-
-<div id="bondModal" class="bond-modal hidden">
-    <div class="bond-card">
-
-        <div class="bond-header">
-            <h2>🏦 BugBank Fixed Deposit Bond</h2>
-            <p>Official Deposit Certificate</p>
-        </div>
-
-        <div id="bondContent" class="bond-content"></div>
-
-        <div class="bond-footer">
-            <button class="btn btn-primary" onclick="closeBond()">Close</button>
-        </div>
-
-    </div>
-</div>
-        <div id="toast-container"></div>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <div id="toast-container"></div>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
+
 </html>
