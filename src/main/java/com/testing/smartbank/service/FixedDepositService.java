@@ -19,7 +19,9 @@ public class FixedDepositService {
     @Autowired
     private AccountRepository accountRepo;
 
-    public FixedDeposit createFD(String accountCode, Long accountId, Double amount, Integer months) {
+    public FixedDeposit createFD(String accountCode, Long accountId, Double amount, Integer months,
+                                 String interestPayoutType, String nomineeName, String nomineeRelationship,
+                                 Boolean autoRenewal, String fdLabel) {
 
         Account acc = accountRepo.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
@@ -47,6 +49,12 @@ public class FixedDepositService {
         fd.setMaturityDate(start.plusMonths(months));
         fd.setMaturityAmount(maturityAmount);
         fd.setStatus("ACTIVE");
+        
+        fd.setInterestPayoutType(interestPayoutType);
+        fd.setNomineeName(nomineeName);
+        fd.setNomineeRelationship(nomineeRelationship);
+        fd.setAutoRenewal(autoRenewal);
+        fd.setFdLabel(fdLabel);
 
         return fdRepo.save(fd);
     }
@@ -79,9 +87,6 @@ public class FixedDepositService {
                 .orElseThrow(() -> new RuntimeException("FD not found"));
 
         fd.setStatus("MATURED");
-
-        // Optional: update maturity date to now
-        fd.setMaturityDate(java.time.LocalDate.now());
 
         return fdRepo.save(fd);
     }

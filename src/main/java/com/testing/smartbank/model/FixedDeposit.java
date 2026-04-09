@@ -29,4 +29,10 @@ public class FixedDeposit {
     private Double maturityAmount;
 
     private String status; // ACTIVE, MATURED, CLOSED
+
+    private String interestPayoutType;
+    private String nomineeName;
+    private String nomineeRelationship;
+    private Boolean autoRenewal;
+    private String fdLabel;
 }

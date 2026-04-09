@@ -420,6 +420,45 @@
                             <input type="number" id="fdMonths" placeholder="e.g. 12">
                         </div>
 
+                        <div class="form-field">
+                            <label>Interest Payout Type</label>
+                            <select id="fdPayout">
+                                <option value="Cummulative">Cummulative</option>
+                                <option value="Non Cummulative">Non Cummulative</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label>Nominee Name</label>
+                            <input type="text" id="fdNomineeName" placeholder="Enter nominee name" maxlength="100">
+                        </div>
+
+                        <div class="form-field">
+                            <label>Nominee Relationship</label>
+                            <select id="fdNomineeRelation" onchange="toggleFDOtherRelation()">
+                                <option value="">Select Relationship</option>
+                                <option value="Spouse">Spouse</option>
+                                <option value="Parent">Parent</option>
+                                <option value="Child">Child</option>
+                                <option value="Sibling">Sibling</option>
+                                <option value="Others">Others</option>
+                            </select>
+                            <input type="text" id="fdNomineeOther" placeholder="Specify relationship" style="display:none; margin-top:0.5rem;" maxlength="50">
+                        </div>
+
+                        <div class="form-field">
+                            <label>FD Label (Optional)</label>
+                            <input type="text" id="fdLabel" placeholder="e.g: Emergency fund" maxlength="50">
+                        </div>
+
+                        <div class="form-field" style="display:flex; flex-direction:column; justify-content:center;">
+                            <label style="margin-bottom:0.5rem;">Auto Renewal</label>
+                            <label class="switch-toggle" style="display:flex; align-items:center; cursor:pointer;">
+                                <input type="checkbox" id="fdAutoRenewal" style="margin-right:0.5rem;">
+                                <span style="font-size:0.9rem; color:var(--text-secondary);">Enable auto-renewal</span>
+                            </label>
+                        </div>
+
                     </div>
 
                     <button class="btn btn-primary" onclick="createFDUI()">Create FD</button>

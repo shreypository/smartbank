@@ -1710,8 +1710,22 @@ async function createFDUI() {
         const amount = document.getElementById("fdAmount").value;
         const months = document.getElementById("fdMonths").value;
 
-        if (!accountCode || !accountId || !amount || !months) {
-            alert("Fill all fields");
+        const interestPayoutType = document.getElementById("fdPayout").value;
+        const nomineeName = document.getElementById("fdNomineeName").value.trim();
+        let nomineeRelationship = document.getElementById("fdNomineeRelation").value;
+        if (nomineeRelationship === "Others") {
+            nomineeRelationship = document.getElementById("fdNomineeOther").value.trim();
+        }
+        const autoRenewal = document.getElementById("fdAutoRenewal").checked;
+        const fdLabel = document.getElementById("fdLabel").value.trim();
+
+        if (!accountCode || !accountId || !amount || !months || !nomineeName || !nomineeRelationship) {
+            alert("Fill all required fields");
+            return;
+        }
+        
+        if (!/^[A-Za-z\s]+$/.test(nomineeName)) {
+            alert("Nominee Name must contain only letters");
             return;
         }
 
@@ -1724,7 +1738,12 @@ async function createFDUI() {
                 accountCode,
                 accountId: Number(accountId),
                 amount: Number(amount),
-                months: Number(months)
+                months: Number(months),
+                interestPayoutType,
+                nomineeName,
+                nomineeRelationship,
+                autoRenewal,
+                fdLabel
             })
         });
 
@@ -1782,6 +1801,27 @@ function viewBond(fd) {
             <span>Interest Rate</span>
             <span>${fd.interestRate}%</span>
         </div>
+
+        <div class="bond-row">
+            <span>Payout Type</span>
+            <span>${fd.interestPayoutType || '-'}</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Nominee Name</span>
+            <span>${fd.nomineeName || '-'}</span>
+        </div>
+
+        <div class="bond-row">
+            <span>Auto Renewal</span>
+            <span>${fd.autoRenewal ? 'Yes' : 'No'}</span>
+        </div>
+
+        ${fd.fdLabel ? `
+        <div class="bond-row">
+            <span>FD Label</span>
+            <span>${fd.fdLabel}</span>
+        </div>` : ''}
 
         <div class="bond-row">
             <span>Duration</span>
@@ -1879,4 +1919,14 @@ function getStatusClass(status) {
     if (status === "MATURED") return "status-green";
     if (status === "CLOSED") return "status-red";
     return "status-yellow";
+}
+
+function toggleFDOtherRelation() {
+    const relation = document.getElementById("fdNomineeRelation").value;
+    const otherInput = document.getElementById("fdNomineeOther");
+    if (relation === "Others") {
+        otherInput.style.display = "block";
+    } else {
+        otherInput.style.display = "none";
+    }
 }

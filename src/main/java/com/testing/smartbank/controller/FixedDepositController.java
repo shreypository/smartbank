@@ -23,8 +23,14 @@ public class FixedDepositController {
         Long accountId = Long.valueOf(body.get("accountId").toString());
         Double amount = Double.valueOf(body.get("amount").toString());
         Integer months = Integer.valueOf(body.get("months").toString());
+        
+        String interestPayoutType = body.containsKey("interestPayoutType") ? body.get("interestPayoutType").toString() : null;
+        String nomineeName = body.containsKey("nomineeName") ? body.get("nomineeName").toString() : null;
+        String nomineeRelationship = body.containsKey("nomineeRelationship") ? body.get("nomineeRelationship").toString() : null;
+        Boolean autoRenewal = body.containsKey("autoRenewal") ? Boolean.valueOf(body.get("autoRenewal").toString()) : false;
+        String fdLabel = body.containsKey("fdLabel") && body.get("fdLabel") != null ? body.get("fdLabel").toString() : null;
 
-        return fdService.createFD(accountCode, accountId, amount, months);
+        return fdService.createFD(accountCode, accountId, amount, months, interestPayoutType, nomineeName, nomineeRelationship, autoRenewal, fdLabel);
     }
 
     // ✅ GET FDs BY ACCOUNT CODE
