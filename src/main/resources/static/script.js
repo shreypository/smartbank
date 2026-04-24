@@ -1097,6 +1097,7 @@ function deleteCard(cardId) {
         .catch(() => showToast('Failed to cancel card', 'error'));
 }
 //------------------------INVESTMENTS------------------------//
+
 const banks = [
     { name: 'HDFC Bank', icon: '🏦' },
     { name: 'ICICI Bank', icon: '🏛️' },
@@ -1112,76 +1113,18 @@ const banks = [
 
 let selectedBank = null;
 let selectedReturn = null;
-
-function openGraph(bank, returnVal) {
-    selectedBank = bank;
-    selectedReturn = returnVal;
-
-    console.log("Selected:", selectedBank, selectedReturn); // DEBUG
-
-    document.getElementById('graphTitle').innerText = bank;
-    document.getElementById('currentReturn').innerText = returnVal + "%";
-
-    const data = generateGraphData();
-    const ctx = document.getElementById('bankChart').getContext('2d');
-
-    if (window.chart) window.chart.destroy();
-
-    window.chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: Array.from({length: 10}, (_, i) => i + 1),
-            datasets: [{
-                data: data,
-                borderWidth: 2,
-                tension: 0.4
-            }]
-        }
-    });
-
-    document.getElementById('graphModal').classList.remove('hidden');
-}
-
-function closeGraphModal() {
-    document.getElementById('graphModal').classList.add('hidden');
-}
-
-function openInvestFromGraph() {
-
-    if (!selectedBank || selectedReturn === null) {
-        alert("Error: No bank selected");
-        return;
-    }
-
-    closeGraphModal();
-
-    openInvestModal(selectedBank, selectedReturn);
-
-    document.getElementById('dynamicReturnText').innerText =
-        `Live return: ${selectedReturn}%`;
-}
-
-function triggerMarketCrash() {
-    alert("💥 MARKET CRASH!");
-    loadInvestmentCards();
-}
+let selectedRisk = "MEDIUM";
+let selectedInvestmentId = null;
 
 let risky = false;
 
+// 🎲 RANDOM RETURN (UI ONLY)
 function generateRandomReturn() {
-    if (risky) return (Math.random() * 35 - 10).toFixed(2); // -10 to +25
-    return (Math.random() * 20 - 5).toFixed(2); // -5 to +15
+    if (risky) return (Math.random() * 35 - 10).toFixed(2);
+    return (Math.random() * 20 - 5).toFixed(2);
 }
 
-function toggleMarketMode() {
-    risky = !risky;
-    alert(risky ? "⚡ Risk Mode ON" : "🛡 Safe Mode ON");
-    loadInvestmentCards();
-}
-
-
-
-// 📊 RANDOM GRAPH DATA
+// 🎲 GRAPH DATA
 function generateGraphData() {
     let data = [];
     let value = 100;
@@ -1193,20 +1136,7 @@ function generateGraphData() {
     return data;
 }
 
-function getAccountOptions(callback) {
-    const userCode = localStorage.getItem('userCode');
-
-    fetch(`/accounts/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
-            console.log("Accounts loaded:", data); // debug
-            callback(data);
-        })
-        .catch(() => {
-            showToast('Failed to load accounts', 'error');
-        });
-}
-
+// 🔥 LOAD CARDS
 function loadInvestmentCards() {
     const container = document.getElementById('investmentCards');
 
@@ -1223,128 +1153,117 @@ function loadInvestmentCards() {
     }).join('');
 }
 
-function loadInvestments() {
-    const userCode = localStorage.getItem('userCode');
-    const container = document.getElementById('invResult');
+// 🔥 OPEN GRAPH
+function openGraph(bank, returnVal) {
+    selectedBank = bank;
+    selectedReturn = returnVal;
 
-    if (!container) return;
+    if (returnVal > 10) selectedRisk = "HIGH";
+    else if (returnVal < 2) selectedRisk = "LOW";
+    else selectedRisk = "MEDIUM";
 
-    fetch(`/investments/user?userCode=${userCode}`)
-        .then(res => res.json())
-        .then(data => {
+    document.getElementById('graphTitle').innerText = bank;
+    document.getElementById('currentReturn').innerText = returnVal + "%";
 
-            console.log("Investments:", data); // DEBUG
+    const riskEl = document.getElementById('riskIndicator');
+    if (riskEl) {
+        riskEl.innerText = `Risk: ${selectedRisk}`;
+        riskEl.style.color =
+            selectedRisk === "HIGH" ? "#ef4444" :
+            selectedRisk === "LOW" ? "#22c55e" : "#facc15";
+    }
 
-            if (!data || data.length === 0) {
-                container.innerHTML = `<p>No investments yet</p>`;
-                document.getElementById('totalInvested').innerText = '₹0';
-                document.getElementById('totalProfit').innerText = '₹0';
-                return;
-            }
+    const ctx = document.getElementById('bankChart').getContext('2d');
 
-            let totalInvested = 0;
-            let totalReturn = 0;
+    if (window.chart) window.chart.destroy();
 
-            data.forEach(i => {
-                if (!i.withdrawn) {
-                    totalInvested += i.amountInvested;
-                    totalReturn += i.returnAmount;
-                }
-            });
+    window.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 10 }, (_, i) => i + 1),
+            datasets: [{
+                data: generateGraphData(),
+                borderWidth: 2,
+                tension: 0.4
+            }]
+        }
+    });
 
-            const profit = totalReturn - totalInvested;
-
-// ✅ format to 2 decimal places
-            const formattedProfit = profit.toFixed(2);
-
-// ✅ select element
-            const profitElement = document.getElementById('totalProfit');
-
-// ✅ update value
-            profitElement.innerText = `₹${formattedProfit}`;
-
-// ✅ apply color
-            if (profit > 0) {
-                profitElement.style.color = "#22c55e"; // green
-            } else if (profit < 0) {
-                profitElement.style.color = "#ef4444"; // red
-            } else {
-                profitElement.style.color = "#ffffff"; // neutral
-            }
-
-            document.getElementById('totalInvested').innerText = `₹${totalInvested}`;
-            document.getElementById('totalProfit').innerText = `₹${profit}`;
-
-            container.innerHTML = `
-                <table style="width:100%;margin-top:10px;">
-                    <tr>
-                        <th>ID</th>
-                        <th>Bank</th>
-                        <th>Invested</th>
-                        <th>Return</th>
-                        <th>Status</th>
-                    </tr>
-                    ${data.map(i => `
-<tr>
-    <td>${i.id}</td>
-    <td>${i.investmentName}</td>
-    <td>₹${i.amountInvested.toFixed(2)}</td>
-
-    <td style="color:${i.returnAmount > i.amountInvested ? '#22c55e' : '#ef4444'}">
-        ₹${i.returnAmount.toFixed(2)}
-    </td>
-
-   <td>
-    <span style="color:${i.withdrawn ? '#ef4444' : '#22c55e'}">
-        ${i.withdrawn ? 'Closed' : 'Active'}
-    </span>
-</td>
-
-    <td>
-        ${!i.withdrawn ? `
-    <button class="btn btn-sm btn-primary"
-        onclick="openWithdrawModal(${i.id})">
-        Withdraw
-    </button>
-` : '—'}
-    </td>
-</tr>
-`).join('')}
-                </table>
-            `;
-        })
-        .catch(() => {
-            container.innerHTML = `<p>Error loading investments</p>`;
-        });
+    document.getElementById('graphModal').classList.remove('hidden');
 }
 
+function closeGraphModal() {
+    document.getElementById('graphModal').classList.add('hidden');
+}
 
+function openInvestFromGraph() {
+    if (!selectedBank) {
+        alert("Error: No bank selected");
+        return;
+    }
 
-// 🔥 UPDATED MODAL
-function openInvestModal(bankName, returnPercent) {
+    closeGraphModal();
+    openInvestModal(selectedBank, selectedRisk);
+
+    document.getElementById('dynamicReturnText').innerText =
+        `Selected Risk: ${selectedRisk}`;
+}
+
+// 🔥 MARKET MODE
+function toggleMarketMode() {
+    risky = !risky;
+    alert(risky ? "⚡ Risk Mode ON" : "🛡 Safe Mode ON");
+    loadInvestmentCards();
+}
+
+function triggerMarketCrash() {
+    alert("💥 MARKET CRASH!");
+    loadInvestmentCards();
+}
+
+// 🔥 ACCOUNTS
+function getAccountOptions(callback) {
+    const userCode = localStorage.getItem('userCode');
+
+    fetch(`/accounts/user?userCode=${userCode}`)
+        .then(res => res.json())
+        .then(callback)
+        .catch(() => showToast('Failed to load accounts', 'error'));
+}
+
+// 🔥 OPEN INVEST MODAL
+function openInvestModal(bankName, riskType) {
+
     document.getElementById('investModalTitle').innerText =
-        `Invest in ${bankName} (${returnPercent}%)`;
+        `Invest in ${bankName} (${riskType} Risk)`;
 
-    document.getElementById('investAmountInput').value = '';
-    document.getElementById('investAmountInput').dataset.bank = bankName;
-    document.getElementById('investAmountInput').dataset.return = returnPercent;
+    const input = document.getElementById('investAmountInput');
+
+    input.value = '';
+    input.dataset.bank = bankName;
+    input.dataset.risk = riskType;
 
     getAccountOptions(accounts => {
         const select = document.getElementById('investAccountSelect');
-        if (!select) return;
+
         select.innerHTML = accounts.map(acc =>
-            `<option value="${acc.id}">${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})</option>`
+            `<option value="${acc.id}">
+                ${acc.accountType} — ${acc.accountNumber} (₹${acc.balance})
+            </option>`
         ).join('');
     });
 
     document.getElementById('investModal').classList.remove('hidden');
 }
 
+// 🔥 CONFIRM INVEST
 function confirmInvest() {
-    const bank = document.getElementById('investAmountInput').dataset.bank;
-    const returnPercent = document.getElementById('investAmountInput').dataset.return;
+    const input = document.getElementById('investAmountInput');
+
+    const bank = input.dataset.bank;
+    const riskType = input.dataset.risk;
+    const amount = input.value;
     const accountId = document.getElementById('investAccountSelect').value;
-    const amount = document.getElementById('investAmountInput').value;
     const userCode = localStorage.getItem('userCode');
     const btn = document.getElementById('btn-invest-confirm');
 
@@ -1356,29 +1275,20 @@ function confirmInvest() {
     btn.innerText = "Processing...";
     btn.disabled = true;
 
-    fetch(`/investments/invest?userCode=${userCode}&name=${encodeURIComponent(bank)}&amount=${amount}&accountId=${accountId}&returnPercent=${returnPercent}`, {
+    fetch(`/investments/invest?userCode=${userCode}&name=${encodeURIComponent(bank)}&amount=${amount}&accountId=${accountId}&riskType=${riskType}`, {
         method: 'POST'
     })
         .then(res => res.text())
         .then(data => {
+            showToast(data, 'success');
+            closeInvestModal();
 
-            console.log("Response:", data); // DEBUG
-
-            alert(data); // ✅ SHOW SUCCESS MESSAGE
-
-            closeInvestModal(); // ✅ CLOSE MODAL
-
-            // 🔥 IMPORTANT: FORCE REFRESH
             setTimeout(() => {
                 loadAccounts();
                 loadInvestments();
-            }, 500);
-
+            }, 400);
         })
-        .catch(err => {
-            console.error(err);
-            alert('Investment failed');
-        })
+        .catch(() => showToast('Investment failed', 'error'))
         .finally(() => {
             btn.innerText = "Confirm Investment →";
             btn.disabled = false;
@@ -1389,56 +1299,69 @@ function closeInvestModal() {
     document.getElementById('investModal').classList.add('hidden');
 }
 
-// 🔽 ADD THIS AT THE END OF FILE
-document.addEventListener("DOMContentLoaded", () => {
-    loadInvestmentCards();
-    loadInvestments();
-});
+// 🔥 LOAD INVESTMENTS
+function loadInvestments() {
+    const userCode = localStorage.getItem('userCode');
+    const container = document.getElementById('invResult');
 
-function confirmWithdraw() {
-    const accountId = document.getElementById('withdrawAccountSelect').value;
-    const btn = document.querySelector('#withdrawModal .btn-modal-submit');
-
-    // 🔥 Prevent double click
-    if (btn.disabled) return;
-
-    // 🔥 Loading UI
-    btn.innerText = "Processing...";
-    btn.disabled = true;
-
-    fetch(`/investments/withdraw?investmentId=${selectedInvestmentId}&accountId=${accountId}`, {
-        method: 'POST'
-    })
-        .then(res => res.text())
+    fetch(`/investments/user?userCode=${userCode}`)
+        .then(res => res.json())
         .then(data => {
 
-            // 🔥 ADD DELAY HERE
-            setTimeout(() => {
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p>No investments yet</p>`;
+                return;
+            }
 
-                showToast(data, 'success');
+            let totalInvested = 0;
 
-                closeWithdrawModal();
+            data.forEach(i => {
+                if (i.status === "ACTIVE") {
+                    totalInvested += i.amountInvested;
+                }
+            });
 
-                loadAccounts();
-                loadInvestments();
+            document.getElementById('totalInvested').innerText = `₹${totalInvested.toFixed(2)}`;
 
-            }, 400); // smooth UX delay
+            container.innerHTML = `
+                <table style="width:100%;margin-top:10px;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Bank</th>
+                        <th>Invested</th>
+                        <th>Risk</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    ${data.map(i => `
+<tr>
+    <td>${i.id}</td>
+    <td>${i.investmentName}</td>
+    <td>₹${i.amountInvested.toFixed(2)}</td>
+    <td>${i.riskType}</td>
 
+    <td style="color:${i.status === 'ACTIVE' ? '#22c55e' : '#ef4444'}">
+        ${i.status}
+    </td>
+
+    <td>
+        ${i.status === 'ACTIVE' ? `
+        <button class="btn btn-sm btn-primary"
+            onclick="openWithdrawModal(${i.id})">
+            Withdraw
+        </button>` : '—'}
+    </td>
+</tr>
+`).join('')}
+                </table>
+            `;
         })
-        .catch(err => {
-            console.error(err);
-
-            // ❌ ERROR TOAST
-            showToast('Withdrawal failed', 'error');
-        })
-        .finally(() => {
-            btn.innerText = "Confirm Withdraw →";
-            btn.disabled = false;
+        .catch(() => {
+            container.innerHTML = `<p>Error loading investments</p>`;
         });
 }
 
-let selectedInvestmentId = null;
-
+// 🔥 WITHDRAW
 function openWithdrawModal(investmentId) {
     selectedInvestmentId = investmentId;
 
@@ -1458,6 +1381,40 @@ function openWithdrawModal(investmentId) {
 function closeWithdrawModal() {
     document.getElementById('withdrawModal').classList.add('hidden');
 }
+
+function confirmWithdraw() {
+    const accountId = document.getElementById('withdrawAccountSelect').value;
+    const btn = document.querySelector('#withdrawModal .btn-modal-submit');
+
+    if (btn.disabled) return;
+
+    btn.innerText = "Processing...";
+    btn.disabled = true;
+
+    fetch(`/investments/withdraw?investmentId=${selectedInvestmentId}&accountId=${accountId}`, {
+        method: 'POST'
+    })
+        .then(res => res.text())
+        .then(data => {
+            setTimeout(() => {
+                showToast(data, 'success');
+                closeWithdrawModal();
+                loadAccounts();
+                loadInvestments();
+            }, 400);
+        })
+        .catch(() => showToast('Withdrawal failed', 'error'))
+        .finally(() => {
+            btn.innerText = "Confirm Withdraw →";
+            btn.disabled = false;
+        });
+}
+
+// 🔥 INIT
+document.addEventListener("DOMContentLoaded", () => {
+    loadInvestmentCards();
+    loadInvestments();
+});
 
 // ─────────────────────────────────────────────────────────────
 //  ADMIN
