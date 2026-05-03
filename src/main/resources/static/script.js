@@ -3,6 +3,7 @@
    All original API logic preserved.
    Additive UI layer: toasts, loaders, modals, nav highlight.
    ================================================================ */
+console.log("SCRIPT LOADED");
 
 // ── TOAST SYSTEM ─────────────────────────────────────────────
 function showToast(message, type = 'info') {
@@ -1272,15 +1273,25 @@ function confirmInvest() {
         return;
     }
 
+    if (selectedReturn === null || selectedReturn === undefined) {
+        alert("Error: No return selected");
+        return;
+    }
+
     btn.innerText = "Processing...";
     btn.disabled = true;
 
-    fetch(`/investments/invest?userCode=${userCode}&name=${encodeURIComponent(bank)}&amount=${amount}&accountId=${accountId}&riskType=${riskType}`, {
+    fetch(`/investments/invest?userCode=${userCode}
+&name=${encodeURIComponent(bank)}
+&amount=${amount}
+&accountId=${accountId}
+&riskType=${riskType}
+&expectedReturn=${selectedReturn}`, {
         method: 'POST'
     })
         .then(res => res.text())
         .then(data => {
-            showToast(data, 'success');
+            showToast(`✅ ${data}`, 'success');
             closeInvestModal();
 
             setTimeout(() => {
@@ -1288,7 +1299,7 @@ function confirmInvest() {
                 loadInvestments();
             }, 400);
         })
-        .catch(() => showToast('Investment failed', 'error'))
+        .catch(() => showToast('❌ Investment failed', 'error'))
         .finally(() => {
             btn.innerText = "Confirm Investment →";
             btn.disabled = false;
@@ -1313,16 +1324,50 @@ function loadInvestments() {
                 return;
             }
 
+            // 🔥 SUMMARY VARIABLES
             let totalInvested = 0;
+            let currentInvested = 0;
+            let totalProfit = 0;
+            let currentProfit = 0;
 
             data.forEach(i => {
-                if (i.status === "ACTIVE") {
-                    totalInvested += i.amountInvested;
+
+                // 🔹 TOTAL INVESTED (ALL)
+                totalInvested += i.amountInvested;
+
+                // 🔹 CURRENT INVESTED (ACTIVE)
+                if (i.status  !== "WITHDRAWN") {
+                    currentInvested += i.amountInvested;
+
+                    // CURRENT PROFIT (UNREALIZED)
+                    let p = i.amountInvested * (i.baseReturnPercentage / 100);
+                    currentProfit += p;
+                }
+
+                // 🔹 TOTAL PROFIT (REALIZED)
+                if (i.status === "WITHDRAWN" && i.finalReturnPercentage !== null) {
+                    let p = i.amountInvested * (i.finalReturnPercentage / 100);
+                    totalProfit += p;
                 }
             });
 
-            document.getElementById('totalInvested').innerText = `₹${totalInvested.toFixed(2)}`;
+            // 🎨 HELPER FUNCTION FOR COLOR
+            function setColoredValue(id, value) {
+                const el = document.getElementById(id);
+                if (!el) return;
 
+                el.innerText = `₹${value.toFixed(2)}`;
+                el.style.color = value >= 0 ? "#22c55e" : "#ef4444";
+            }
+
+            // 🔥 SET SUMMARY VALUES
+            document.getElementById('totalInvested').innerText = `₹${totalInvested.toFixed(2)}`;
+            document.getElementById('currentInvested').innerText = `₹${currentInvested.toFixed(2)}`;
+
+            setColoredValue('totalProfit', totalProfit);
+            setColoredValue('currentProfit', currentProfit);
+
+            // 🔥 TABLE WITH PROFIT COLUMN
             container.innerHTML = `
                 <table style="width:100%;margin-top:10px;">
                     <tr>
@@ -1331,34 +1376,122 @@ function loadInvestments() {
                         <th>Invested</th>
                         <th>Risk</th>
                         <th>Status</th>
+                        <th>Profit / Loss</th>
                         <th>Action</th>
                     </tr>
-                    ${data.map(i => `
-<tr>
-    <td>${i.id}</td>
-    <td>${i.investmentName}</td>
-    <td>₹${i.amountInvested.toFixed(2)}</td>
-    <td>${i.riskType}</td>
 
-    <td style="color:${i.status === 'ACTIVE' ? '#22c55e' : '#ef4444'}">
-        ${i.status}
-    </td>
+                    ${data.map(i => {
 
-    <td>
-        ${i.status === 'ACTIVE' ? `
-        <button class="btn btn-sm btn-primary"
-            onclick="openWithdrawModal(${i.id})">
-            Withdraw
-        </button>` : '—'}
-    </td>
-</tr>
-`).join('')}
+                        let profit = 0;
+
+                        if (i.status === "WITHDRAWN" && i.finalReturnPercentage !== null) {
+                            profit = i.amountInvested * (i.finalReturnPercentage / 100);
+                        } else {
+                            profit = i.amountInvested * (i.baseReturnPercentage / 100);
+                        }
+
+                        const profitColor = profit >= 0 ? '#22c55e' : '#ef4444';
+
+                        const statusColor =
+                            i.status === "MATURED" ? "#22c55e" :
+                            i.status === "LOCKED" ? "#facc15" :
+                            i.status === "ACTIVE" ? "#38bdf8" :
+                            "#ef4444";
+
+                        return `
+                    <tr>
+                        <td>${i.id}</td>
+                        <td>${i.investmentName}</td>
+                        <td>₹${i.amountInvested.toFixed(2)}</td>
+                        <td>${i.riskType}</td>
+
+                        <td style="color:${statusColor}">
+                            ${i.status}
+                        </td>
+
+                        <td style="color:${profitColor}">
+                            ₹${profit.toFixed(2)}
+                        </td>
+
+                        <td style="min-width:140px;">
+
+                            ${i.status === 'WITHDRAWN' ? `
+                                <span style="color:#64748b;">—</span>
+                            ` : `
+                                <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+
+                                    <!-- Withdraw Button -->
+                                    <button class="btn btn-sm ${i.status === 'LOCKED' ? 'btn-ghost' : 'btn-primary'}"
+                                        style="padding:6px 44px;"
+                                        onclick="handleWithdrawClick(${i.id}, '${i.status}')">
+                                        Withdraw
+                                    </button>
+
+                                    <!-- Secondary Actions -->
+                                   <div style="display:flex;gap:8px;">
+                                       <button class="btn btn-sm btn-ghost"
+                                           onclick="validateProfit(${i.id})">
+                                           📊
+                                       </button>
+
+                                       <button class="btn btn-sm btn-ghost"
+                                           onclick="validateTransactions(${i.id})">
+                                           🧾
+                                       </button>
+
+                                       <button class="btn btn-sm btn-ghost"
+                                           onclick="showBonus(${i.id})">
+                                           🎁
+                                       </button>
+                                   </div>
+
+                                </div>
+                            `}
+
+                        </td>
+                    </tr>`;
+                    }).join('')}
                 </table>
             `;
         })
         .catch(() => {
             container.innerHTML = `<p>Error loading investments</p>`;
         });
+}
+
+// 🔥 HANDLE WITHDRAW CLICK (LOCK LOGIC)
+function handleWithdrawClick(investmentId, status) {
+
+    if (status === "LOCKED") {
+        showToast("🔒 Cannot withdraw instantly. Try again after ~30 seconds.", "error");
+        return;
+    }
+
+    if (status === "WITHDRAWN") {
+        showToast("❌ Already withdrawn", "error");
+        return;
+    }
+
+    // ✅ ACTIVE or MATURED
+    openWithdrawModal(investmentId);
+}
+
+function showBonus(id) {
+    fetch(`/investments/user?userCode=${localStorage.getItem('userCode')}`)
+        .then(res => res.json())
+        .then(data => {
+            const inv = data.find(i => i.id === id);
+
+            if (!inv) {
+                showToast("Investment not found", "error");
+                return;
+            }
+
+            const bonus = inv.amountInvested * (inv.maturityBonus / 100);
+
+            showToast(`🎁 Potential Bonus: ₹${bonus.toFixed(2)}`, "success");
+        })
+        .catch(() => showToast("Failed to fetch bonus", "error"));
 }
 
 // 🔥 WITHDRAW
@@ -1415,6 +1548,62 @@ document.addEventListener("DOMContentLoaded", () => {
     loadInvestmentCards();
     loadInvestments();
 });
+
+// 🔥 VALIDATE PROFIT
+function validateProfit(id) {
+    fetch(`/investments/validate-profit?investmentId=${id}`)
+        .then(res => res.text())
+        .then(data => showToast(data, 'success'))
+        .catch(() => showToast('Validation failed', 'error'));
+}
+
+
+// 🔥 VALIDATE TRANSACTIONS
+function validateTransactions(id) {
+    fetch(`/investments/validate-transactions?investmentId=${id}`)
+        .then(res => res.text())
+        .then(data => showToast(data, 'success'))
+        .catch(() => showToast('Validation failed', 'error'));
+}
+
+
+// 🔥 FORCE MATURE (REUSABLE)
+function forceMatureInvestment(id) {
+
+    if (!id) {
+        alert("Enter investment ID");
+        return;
+    }
+
+    fetch(`/investments/force-mature?investmentId=${id}`, {
+        method: 'POST'
+    })
+        .then(res => res.text())
+        .then(data => {
+            showToast(data, 'success');
+
+            // reload if on dashboard
+            if (typeof loadInvestments === "function") {
+                loadInvestments();
+            }
+        })
+        .catch(() => showToast('Operation failed', 'error'));
+}
+
+function adminForceMature() {
+    const id = document.getElementById('adminInvestmentId').value;
+    forceMatureInvestment(id);
+}
+
+function adminValidateProfit() {
+    const id = document.getElementById('adminInvestmentId').value;
+    validateProfit(id);
+}
+
+function adminValidateTxn() {
+    const id = document.getElementById('adminInvestmentId').value;
+    validateTransactions(id);
+}
 
 // ─────────────────────────────────────────────────────────────
 //  ADMIN

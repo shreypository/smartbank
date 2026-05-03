@@ -12,6 +12,8 @@
 
 <body>
 
+<script src="script.js"></script>
+
     <div class="dashboard">
 
         <!-- ══════════════════════ SIDEBAR ══════════════════════ -->
@@ -489,16 +491,31 @@
                     <button class="btn btn-sm btn-ghost" onclick="triggerMarketCrash()">💥 Crash Market</button>
                 </div>
 
-                <!-- Summary -->
+                <!-- 🔥 SUMMARY (UPDATED) -->
                 <div class="invest-summary">
+
                     <div class="invest-stat">
                         <div class="invest-stat-label">Total Invested</div>
                         <div class="invest-stat-value grad-text" id="totalInvested">₹0</div>
                     </div>
+
                     <div class="invest-stat">
                         <div class="invest-stat-label">Total Profit / Loss</div>
                         <div class="invest-stat-value" id="totalProfit">₹0</div>
                     </div>
+
+                    <!-- ✅ NEW -->
+                    <div class="invest-stat">
+                        <div class="invest-stat-label">Current Invested</div>
+                        <div class="invest-stat-value grad-text" id="currentInvested">₹0</div>
+                    </div>
+
+                    <!-- ✅ NEW -->
+                    <div class="invest-stat">
+                        <div class="invest-stat-label">Current Profit / Loss</div>
+                        <div class="invest-stat-value" id="currentProfit">₹0</div>
+                    </div>
+
                 </div>
 
                 <!-- 🔥 LIVE MARKET GRID -->
@@ -506,11 +523,12 @@
                     <div class="sub-h3" style="margin-bottom:0;">Live Market (Click any bank)</div>
                     <button class="btn btn-ghost btn-sm" onclick="loadInvestmentCards()">↺ Refresh</button>
                 </div>
+
                 <div id="investmentCards" class="invest-grid"></div>
 
                 <div class="divider"></div>
 
-                <!-- PORTFOLIO -->
+                <!-- 🔥 PORTFOLIO -->
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
                     <div class="sub-h3" style="margin-bottom:0;flex:1;">Your Portfolio</div>
                     <button class="btn btn-ghost btn-sm" onclick="loadInvestments()">↺ Refresh</button>
@@ -535,12 +553,13 @@
                 </div>
             </div>
 
-            <!-- Invest Modal -->
+            <!-- 🔥 INVEST MODAL -->
             <div id="investModal" class="modal hidden">
                 <div class="modal-card">
                     <button class="modal-close" onclick="closeInvestModal()">✕</button>
 
                     <h2 id="investModalTitle">Invest in Bank</h2>
+
                     <p class="form-sub" id="dynamicReturnText" style="margin-top:0.25rem;margin-bottom:1.5rem;">
                         Dynamic return based on market performance
                     </p>
@@ -555,8 +574,9 @@
                         <input type="number" id="investAmountInput" placeholder="e.g. 25000">
                     </div>
 
-                    <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">Confirm
-                        Investment →</button>
+                    <button id="btn-invest-confirm" class="btn-modal-submit" onclick="confirmInvest()">
+                        Confirm Investment →
+                    </button>
                 </div>
             </div>
 

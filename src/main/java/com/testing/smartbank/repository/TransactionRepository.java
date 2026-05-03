@@ -8,6 +8,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByAccountId(Long accountId);
     List<Transaction> findByAccountIdAndType(Long accountId, String type);
     List<Transaction> findByTransactionId(String transactionId);
+    List<Transaction> findByAccount_Id(Long accountId);
 
 
     List<Transaction> findByAmount(double amount);

@@ -2140,3 +2140,10 @@ tbody tr:last-child td { border-bottom: none; }
 
 .schedule-toggle { display: flex; gap: 1.5rem; margin-top: 0.5rem; }
 .radio-lbl { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; color: var(--text-primary); }
+
+
+/* LOCKED BUTTON STYLE */
+.btn-ghost {
+    opacity: 0.7;
+    cursor: pointer;
+}

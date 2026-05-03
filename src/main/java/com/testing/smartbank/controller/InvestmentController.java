@@ -9,24 +9,25 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/investments")
-@CrossOrigin // helpful for UI testing
+@CrossOrigin
 public class InvestmentController {
 
     @Autowired
     private InvestmentService investmentService;
 
-    // 🔥 INVEST (UPDATED)
+    // 🔥 INVEST (UPDATED - WITH EXPECTED RETURN)
     @PostMapping("/invest")
     public String invest(@RequestParam String userCode,
                          @RequestParam String name,
                          @RequestParam double amount,
                          @RequestParam Long accountId,
-                         @RequestParam String riskType) {
+                         @RequestParam String riskType,
+                         @RequestParam double expectedReturn) {
 
-        return investmentService.invest(userCode, name, amount, accountId, riskType);
+        return investmentService.invest(userCode, name, amount, accountId, riskType, expectedReturn);
     }
 
-    // 🔥 GET ALL INVESTMENTS
+    // 🔥 GET ALL INVESTMENTS (AUTO STATUS UPDATE)
     @GetMapping("/user")
     public List<Investment> getInvestments(@RequestParam String userCode) {
         return investmentService.getInvestments(userCode);
@@ -47,7 +48,7 @@ public class InvestmentController {
         return investmentService.withdraw(investmentId, accountId);
     }
 
-    // 🔥 BULK WITHDRAW (TESTING GOLD)
+    // 🔥 BULK WITHDRAW
     @PostMapping("/withdraw-all")
     public String withdrawAll(@RequestParam String userCode,
                               @RequestParam Long accountId) {
@@ -55,7 +56,7 @@ public class InvestmentController {
         return investmentService.withdrawAll(userCode, accountId);
     }
 
-    // 🔥 PREVIEW RETURNS (VERY IMPORTANT FOR TESTING)
+    // 🔥 PREVIEW RETURNS
     @GetMapping("/preview")
     public double preview(@RequestParam double amount,
                           @RequestParam double percent) {
@@ -63,11 +64,29 @@ public class InvestmentController {
         return amount + (amount * percent / 100);
     }
 
-    // 🔥 SIMULATION ENDPOINT (AUTOMATION USE)
+    // 🔥 SIMULATION (UPDATED FLOW)
     @PostMapping("/simulate")
     public String simulate(@RequestParam String userCode,
                            @RequestParam Long accountId) {
 
         return investmentService.runSimulation(userCode, accountId);
+    }
+
+    // 🔥 FORCE MATURE (ADMIN FEATURE)
+    @PostMapping("/force-mature")
+    public String forceMature(@RequestParam Long investmentId) {
+        return investmentService.forceMature(investmentId);
+    }
+
+    // 🔥 VALIDATE TRANSACTIONS
+    @GetMapping("/validate-transactions")
+    public String validateTransactions(@RequestParam Long investmentId) {
+        return investmentService.validateTransactions(investmentId);
+    }
+
+    // 🔥 VALIDATE PROFIT
+    @GetMapping("/validate-profit")
+    public String validateProfit(@RequestParam Long investmentId) {
+        return investmentService.validateProfit(investmentId);
     }
 }

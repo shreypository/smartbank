@@ -31,7 +31,7 @@
 
         <div class="section-header" style="margin-top:1rem;">
             <h2>🛡️ Admin Dashboard</h2>
-            <p>Manage users, accounts and fixed deposits</p>
+            <p>Manage users, accounts, deposits & investments</p>
         </div>
 
         <!-- ══════════════ ACTION BUTTONS ══════════════ -->
@@ -74,6 +74,32 @@
 
                 <div style="display:flex;align-items:flex-end;">
                     <button class="btn btn-primary" onclick="forceMatureFD()">Force Mature</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ NEW: INVESTMENT ADMIN PANEL ══════════════ -->
+        <div class="admin-panel">
+            <div class="sub-h3">📈 Investment Controls</div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label>Investment ID</label>
+                    <input type="number" id="adminInvestmentId" placeholder="Enter Investment ID">
+                </div>
+
+                <div style="display:flex;align-items:flex-end;gap:10px;">
+                    <button class="btn btn-primary" onclick="adminForceMature()">
+                        ⚡ Force Mature
+                    </button>
+
+                    <button class="btn btn-ghost" onclick="adminValidateProfit()">
+                        📊 Validate Profit
+                    </button>
+
+                    <button class="btn btn-ghost" onclick="adminValidateTxn()">
+                        🧾 Validate Txn
+                    </button>
                 </div>
             </div>
         </div>

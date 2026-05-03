@@ -30,19 +30,19 @@ public class InvestmentService {
 
     // 🔥 INVEST
     @Transactional
-    public String invest(String userCode, String name, double amount, Long accountId, String riskType) {
+    public String invest(String userCode, String name, double amount,
+                         Long accountId, String riskType, double expectedReturn) {
 
         User user = userRepository.findByUserCode(userCode);
         Account account = accountRepository.findById(accountId).orElse(null);
 
         if (user == null || account == null) return "Invalid request";
 
-        // ✅ Validation
         if (amount < 100) return "Minimum investment is 100";
         if (amount > 1000000) return "Maximum investment is 1000000";
         if (account.getBalance() < amount) return "Insufficient balance";
 
-        // ⚠️ Simulate random failure (for testing)
+        // 🔥 Failure simulation
         if (random.nextInt(100) < 5) {
             return "System error. Try again.";
         }
@@ -51,10 +51,9 @@ public class InvestmentService {
         account.setBalance(account.getBalance() - amount);
         accountRepository.save(account);
 
-        // 🎲 Generate return % based on risk
-        double percent = generateReturnPercentage(riskType);
+        double percent = expectedReturn;
 
-        // 📝 Transaction log
+        // 📝 Transaction
         Transaction t = new Transaction();
         t.setTransactionId(UUID.randomUUID().toString());
         t.setType("INVESTMENT");
@@ -72,13 +71,12 @@ public class InvestmentService {
         inv.setAmountInvested(amount);
         inv.setBaseReturnPercentage(percent);
         inv.setInvestedAt(LocalDateTime.now());
-        inv.setStatus("ACTIVE");
         inv.setRiskType(riskType);
 
-        // 🔒 Lock-in (seconds)
+        // 🔒 Lock logic
         inv.setLockInSeconds(30);
+        inv.setStatus("LOCKED");
 
-        // ⚖️ Rules
         inv.setEarlyWithdrawalPenalty(5);
         inv.setMaturityBonus(10);
 
@@ -86,13 +84,37 @@ public class InvestmentService {
 
         investmentRepository.save(inv);
 
-        return "Investment successful (" + percent + "%)";
+        return String.format("Investment successful. Locked Return: %.2f%%", percent);
+    }
+
+    private void updateInvestmentStatus(Investment inv) {
+
+        long secondsHeld = Duration.between(inv.getInvestedAt(), LocalDateTime.now()).getSeconds();
+
+        if ("WITHDRAWN".equals(inv.getStatus())) return;
+
+        if (secondsHeld < inv.getLockInSeconds()) {
+            inv.setStatus("LOCKED");
+        } else if (secondsHeld >= 60) {
+            inv.setStatus("MATURED");
+        } else {
+            inv.setStatus("ACTIVE");
+        }
     }
 
     // 🔥 GET INVESTMENTS
     public List<Investment> getInvestments(String userCode) {
+
         User user = userRepository.findByUserCode(userCode);
-        return investmentRepository.findByUserId(user.getId());
+        if (user == null) return List.of();
+
+        List<Investment> list = investmentRepository.findByUserId(user.getId());
+
+        for (Investment inv : list) {
+            updateInvestmentStatus(inv);
+        }
+
+        return list;
     }
 
     // 🔥 WITHDRAW
@@ -103,41 +125,39 @@ public class InvestmentService {
 
         if (inv == null || account == null) return "Invalid request";
 
-        // 🔐 Account validation
         if (!inv.getAccount().getId().equals(accountId)) {
             return "Account mismatch";
         }
 
-        // ❌ Already withdrawn
         if ("WITHDRAWN".equals(inv.getStatus())) {
             return "Already withdrawn";
         }
 
-        // ⏱️ Time held
+        // 🔥 UPDATE STATUS FIRST
+        updateInvestmentStatus(inv);
+
         long secondsHeld = Duration.between(inv.getInvestedAt(), LocalDateTime.now()).getSeconds();
 
         double finalPercent = inv.getBaseReturnPercentage();
 
-        // 🔒 Lock-in check
+        // 🔒 Early withdrawal penalty
         if (secondsHeld < inv.getLockInSeconds()) {
             finalPercent -= inv.getEarlyWithdrawalPenalty();
         }
 
         // 🎁 Bonus
-        if (secondsHeld > 60) {
+        if ("MATURED".equals(inv.getStatus())) {
             finalPercent += inv.getMaturityBonus();
         }
 
-        // 🎲 Random fluctuation (for HIGH risk)
+        // 🎲 HIGH risk fluctuation
         if ("HIGH".equalsIgnoreCase(inv.getRiskType())) {
-            finalPercent += random.nextInt(11) - 5; // -5 to +5
+            finalPercent += random.nextInt(11) - 5;
         }
 
-        // 💸 Allow LOSS
         double returns = inv.getAmountInvested() +
                 (inv.getAmountInvested() * finalPercent / 100);
 
-        // 💰 Update balance
         account.setBalance(account.getBalance() + returns);
         accountRepository.save(account);
 
@@ -151,14 +171,14 @@ public class InvestmentService {
         t.setAccount(account);
         transactionRepository.save(t);
 
-        // ✅ Update investment
         inv.setFinalReturnPercentage(finalPercent);
         inv.setWithdrawnAt(LocalDateTime.now());
         inv.setStatus("WITHDRAWN");
 
         investmentRepository.save(inv);
 
-        return "Withdraw successful (" + finalPercent + "%)";
+        return String.format("Withdraw successful. Return: %.2f%% | Credited: ₹%.2f",
+                finalPercent, returns);
     }
 
     // 🎲 RETURN GENERATOR
@@ -202,21 +222,20 @@ public class InvestmentService {
 
         for (Investment inv : investments) {
 
-            if (!"ACTIVE".equals(inv.getStatus())) {
+            updateInvestmentStatus(inv);
+
+            if (!"ACTIVE".equals(inv.getStatus()) && !"MATURED".equals(inv.getStatus())) {
                 failed++;
                 continue;
             }
 
             String result = withdraw(inv.getId(), accountId);
 
-            if (result.contains("successful")) {
-                success++;
-            } else {
-                failed++;
-            }
+            if (result.contains("successful")) success++;
+            else failed++;
         }
 
-        return "Bulk withdraw complete: " + success + " success, " + failed + " failed";
+        return String.format("Bulk Withdraw → ✅ %d success | ❌ %d failed", success, failed);
     }
 
     public String runSimulation(String userCode, Long accountId) {
@@ -228,23 +247,25 @@ public class InvestmentService {
 
         String[] risks = {"LOW", "MEDIUM", "HIGH"};
 
-        // 🔥 Auto create 5 investments
         for (int i = 0; i < 5; i++) {
 
-            double amount = 100 + (Math.random() * 900); // 100–1000
+            double amount = 100 + (Math.random() * 900);
             String risk = risks[(int) (Math.random() * risks.length)];
 
-            invest(userCode, "Sim-" + i, amount, accountId, risk);
+            double expectedReturn = generateReturnPercentage(risk);
+
+            invest(userCode, "Sim-" + i, amount, accountId, risk, expectedReturn);
         }
 
-        // ⏱️ Simulate delay effect manually (optional in UI)
         List<Investment> investments = investmentRepository.findByUserId(user.getId());
 
         int withdrawn = 0;
 
         for (Investment inv : investments) {
 
-            if ("ACTIVE".equals(inv.getStatus())) {
+            updateInvestmentStatus(inv);
+
+            if ("ACTIVE".equals(inv.getStatus()) || "MATURED".equals(inv.getStatus())) {
                 withdraw(inv.getId(), accountId);
                 withdrawn++;
             }
@@ -252,4 +273,67 @@ public class InvestmentService {
 
         return "Simulation complete. Withdrawn: " + withdrawn;
     }
+
+    public String forceMature(Long investmentId) {
+
+        Investment inv = investmentRepository.findById(investmentId).orElse(null);
+
+        if (inv == null) return "Investment not found";
+
+        if ("WITHDRAWN".equals(inv.getStatus())) {
+            return "Already withdrawn";
+        }
+
+        inv.setStatus("MATURED");
+        inv.setInvestedAt(LocalDateTime.now().minusSeconds(120));
+
+        investmentRepository.save(inv);
+
+        return "Investment force matured";
+    }
+
+    public String validateTransactions(Long investmentId) {
+
+        Investment inv = investmentRepository.findById(investmentId).orElse(null);
+
+        if (inv == null) return "Investment not found";
+
+        List<Transaction> txns = transactionRepository.findByAccount_Id(inv.getAccount().getId());
+
+        boolean hasInvest = txns.stream().anyMatch(t ->
+                t.getType().equals("INVESTMENT") &&
+                        t.getAmount() == inv.getAmountInvested()
+        );
+
+        boolean hasReturn = txns.stream().anyMatch(t ->
+                t.getType().equals("INVESTMENT_RETURN")
+        );
+
+        if (!hasInvest) return "Missing INVESTMENT transaction";
+        if ("WITHDRAWN".equals(inv.getStatus()) && !hasReturn)
+            return "Missing RETURN transaction";
+
+        return "Transactions valid";
+    }
+
+    public String validateProfit(Long investmentId) {
+
+        Investment inv = investmentRepository.findById(investmentId).orElse(null);
+
+        if (inv == null) return "Investment not found";
+
+        double expected;
+
+        if ("WITHDRAWN".equals(inv.getStatus())) {
+            expected = inv.getAmountInvested() *
+                    (inv.getFinalReturnPercentage() / 100);
+        } else {
+            expected = inv.getAmountInvested() *
+                    (inv.getBaseReturnPercentage() / 100);
+        }
+
+        return String.format("Expected Profit: ₹%.2f", expected);
+    }
+
+
 }
