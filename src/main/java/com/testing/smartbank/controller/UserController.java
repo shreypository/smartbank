@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/users")
@@ -25,15 +26,19 @@ public class UserController {
 
     // ── LOGIN ────────────────────────────────────────────────────
     @PostMapping("/login")
-    public Object loginUser(@RequestBody User user) {
+    public ResponseEntity<?> loginUser(@RequestBody User user) {
+
         User loggedInUser = userService.login(user.getEmail(), user.getPassword());
+
         if (loggedInUser != null) {
-            return loggedInUser;
+            return ResponseEntity.ok(Map.of(
+                    "userCode", loggedInUser.getUserCode()
+            ));
         }
-        Map<String, String> err = new HashMap<>();
-        err.put("status", "error");
-        err.put("message", "Invalid email or password");
-        return err;
+
+        return ResponseEntity.status(401).body(Map.of(
+                "message", "Invalid email or password"
+        ));
     }
 
     // ── ALL USERS (ADMIN) ────────────────────────────────────────

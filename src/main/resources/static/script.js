@@ -67,7 +67,7 @@ function login() {
     const msgEl = document.getElementById('message');
     const btn = document.getElementById('btn-login-submit');
 
-
+    // Validation
     if (!email || !password) {
         msgEl.innerText = '⚠️ Please fill in all fields.';
         return;
@@ -78,27 +78,39 @@ function login() {
 
     fetch('/users/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ email, password })
     })
-        .then(res => res.json())
-        .then(data => {
-            setLoading(btn, false);
-            if (data.userCode) {
-                localStorage.setItem('userCode', data.userCode);
-                localStorage.setItem("accountCode", data.userCode);
-                window.location.href = 'dashboard.html';
-            } else {
-                msgEl.innerText = '❌ Invalid email or password. Please try again.';
-            }
-        })
-        .catch(err => {
-            setLoading(btn, false);
-            msgEl.innerText = '❌ Invalid email or password. Please try again.';
-            console.error(err);
-        });
-}
+    .then(async (res) => {
+        const data = await res.json().catch(() => ({})); // safe parse
 
+        // ❗ Handle failed HTTP status (401, 403, 500 etc.)
+        if (!res.ok) {
+            throw new Error(data.message || 'Invalid credentials');
+        }
+
+        return data;
+    })
+    .then((data) => {
+        setLoading(btn, false);
+
+        if (data && data.userCode) {
+            localStorage.setItem('userCode', data.userCode);
+            localStorage.setItem('accountCode', data.userCode);
+            window.location.href = 'dashboard.html';
+        } else {
+            msgEl.innerText = '❌ Invalid email or password.';
+            console.log("Invalid");
+        }
+    })
+    .catch((err) => {
+        setLoading(btn, false);
+        msgEl.innerText = '❌ Invalid email or password.';
+        console.error('Login error:', err);
+    });
+}
 // ─────────────────────────────────────────────────────────────
 //  REGISTRATION WIZARD — STEP NAVIGATION
 // ─────────────────────────────────────────────────────────────
@@ -1141,6 +1153,9 @@ function generateGraphData() {
 function loadInvestmentCards() {
     const container = document.getElementById('investmentCards');
 
+    // ✅ Prevent crash if element not present
+    if (!container) return;
+
     container.innerHTML = banks.map(bank => {
         const r = parseFloat(generateRandomReturn());
         const cls = r > 5 ? 'positive' : r < 0 ? 'negative' : 'neutral';
@@ -1259,52 +1274,54 @@ function openInvestModal(bankName, riskType) {
 
 // 🔥 CONFIRM INVEST
 function confirmInvest() {
-    const input = document.getElementById('investAmountInput');
+       const input = document.getElementById('investAmountInput');
 
-    const bank = input.dataset.bank;
-    const riskType = input.dataset.risk;
-    const amount = input.value;
-    const accountId = document.getElementById('investAccountSelect').value;
-    const userCode = localStorage.getItem('userCode');
-    const btn = document.getElementById('btn-invest-confirm');
+       const bank = input.dataset.bank;
+       const riskType = input.dataset.risk;
+       const amount = input.value;
+       const accountId = document.getElementById('investAccountSelect').value;
+       const userCode = localStorage.getItem('userCode');
+       const btn = document.getElementById('btn-invest-confirm');
 
-    if (!amount || amount <= 0) {
-        alert('Enter valid amount');
-        return;
-    }
+       const BASE_URL = "https://smartbank-j2m0.onrender.com";
 
-    if (selectedReturn === null || selectedReturn === undefined) {
-        alert("Error: No return selected");
-        return;
-    }
+       if (!amount || amount <= 0) {
+           alert('Enter valid amount');
+           return;
+       }
 
-    btn.innerText = "Processing...";
-    btn.disabled = true;
+       if (selectedReturn === null || selectedReturn === undefined) {
+           alert("❌ Please select a bank first");
+           return;
+       }
 
-    fetch(`/investments/invest?userCode=${userCode}
-&name=${encodeURIComponent(bank)}
-&amount=${amount}
-&accountId=${accountId}
-&riskType=${riskType}
-&expectedReturn=${selectedReturn}`, {
-        method: 'POST'
-    })
-        .then(res => res.text())
-        .then(data => {
-            showToast(`✅ ${data}`, 'success');
-            closeInvestModal();
+       btn.innerText = "Processing...";
+       btn.disabled = true;
 
-            setTimeout(() => {
-                loadAccounts();
-                loadInvestments();
-            }, 400);
-        })
-        .catch(() => showToast('❌ Investment failed', 'error'))
-        .finally(() => {
-            btn.innerText = "Confirm Investment →";
-            btn.disabled = false;
-        });
-}
+       // 🔥 CLEAN URL (NO LINE BREAKS)
+       const url = `${BASE_URL}/investments/invest?userCode=${userCode}&name=${encodeURIComponent(bank)}&amount=${amount}&accountId=${accountId}&riskType=${riskType}&expectedReturn=${selectedReturn}`;
+
+       console.log("REQUEST URL:", url); // debug
+
+       fetch(url, {
+           method: 'POST'
+       })
+           .then(res => res.text())
+           .then(data => {
+               showToast(`✅ ${data}`, 'success');
+               closeInvestModal();
+
+               setTimeout(() => {
+                   loadAccounts();
+                   loadInvestments();
+               }, 400);
+           })
+           .catch(() => showToast('❌ Investment failed', 'error'))
+           .finally(() => {
+               btn.innerText = "Confirm Investment →";
+               btn.disabled = false;
+           });
+   }
 
 function closeInvestModal() {
     document.getElementById('investModal').classList.add('hidden');
@@ -1314,6 +1331,7 @@ function closeInvestModal() {
 function loadInvestments() {
     const userCode = localStorage.getItem('userCode');
     const container = document.getElementById('invResult');
+    if (!container) return;
 
     fetch(`/investments/user?userCode=${userCode}`)
         .then(res => res.json())
@@ -1545,8 +1563,15 @@ function confirmWithdraw() {
 
 // 🔥 INIT
 document.addEventListener("DOMContentLoaded", () => {
-    loadInvestmentCards();
-    loadInvestments();
+
+    // ✅ Only run on dashboard (where investments exist)
+    if (document.getElementById('investmentCards')) {
+        loadInvestmentCards();
+    }
+
+    if (document.getElementById('invResult')) {
+        loadInvestments();
+    }
 });
 
 // 🔥 VALIDATE PROFIT
@@ -1783,6 +1808,7 @@ async function loadFDs() {
     const data = await res.json();
 
     const container = document.getElementById("fdList");
+    if (!container) return;
     container.innerHTML = "";
 
     data.forEach(fd => {
