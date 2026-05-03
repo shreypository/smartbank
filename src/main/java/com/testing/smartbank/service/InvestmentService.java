@@ -1,5 +1,5 @@
 package com.testing.smartbank.service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.testing.smartbank.model.*;
 import com.testing.smartbank.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +29,7 @@ public class InvestmentService {
     private final Random random = new Random();
 
     // 🔥 INVEST
+    @Transactional
     public String invest(String userCode, String name, double amount, Long accountId, String riskType) {
 
         User user = userRepository.findByUserCode(userCode);
@@ -38,7 +39,7 @@ public class InvestmentService {
 
         // ✅ Validation
         if (amount < 100) return "Minimum investment is 100";
-        if (amount > 10000) return "Maximum investment is 10000";
+        if (amount > 1000000) return "Maximum investment is 1000000";
         if (account.getBalance() < amount) return "Insufficient balance";
 
         // ⚠️ Simulate random failure (for testing)
